@@ -131,32 +131,27 @@
 
 
 
-
-void readFileToMem(const char* fname, char** out_, unsigned long long* size_) {
-    // TODO: do this more elegantly..
+#ifndef ALIB_NO_FILE_UTILS
+#include <iosfwd>
+#include <fstream>
+#include <sstream>
+void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
+    // TODO: do this more elegantly.. But that's hard! So I won't do it. (:
 	std::ifstream file(fname, std::ios::binary);
-    
 	std::streampos fsize = 0;
-
-    fsize = file.tellg();
-    file.seekg( 0, std::ios::end );
-    fsize = file.tellg() - fsize;
-
+    	fsize = file.tellg();
+    	file.seekg( 0, std::ios::end );
+    	fsize = file.tellg() - fsize;
 	file.seekg (0, std::ios::beg); // Go back to the beginning
 	long long _sz = fsize;
-	
-	std::cout << "Size of cwl file: " << file.tellg();
-	
-
 	char* out_dir = (char*)malloc(_sz);
 	file.read(out_dir, _sz);
 	file.close();
-	std::cout << "CWLLib: Reading file " << fname << " with size " << _sz << "\n";
 	* out_ = out_dir;
 	* size_ = _sz;
 	// yay memory allocation magic!   
 }
-
+#endif // ALIB_NO_FILE_UTILS
 
 
 
