@@ -2,7 +2,7 @@ Hi, I’m [Avetharun](https://github.com/avetharun), a random girl who happens t
 
 Here's a few of my projects:
 
-[aveth_libs.hpp](https://github.com/avetharun/avetharun/blob/main/aveth_libs.hpp)
+[ave_libs.hpp](https://github.com/avetharun/avetharun/blob/main/ave_libs.hpp)
 
 [Custom GNU GPL-3 license](https://github.com/avetharun/avetharun/blob/main/gnu_gpl_3_a_LICENSE)
 
