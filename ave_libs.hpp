@@ -71,6 +71,13 @@
 + ((unsigned long)B8(db2)<<16) \
 + ((unsigned long)B8(db3)<<8) \
 + B8(dlsb))
+
+#define B64(dmsb,db2,db3,db4,db5,db6,db7,dlsb) \
+(\
+	((unsigned long long int)B32(dmsb,db2,db3,db4)<<32  ) \
++	((unsigned long long int)B32(db5,db6,db7,dlsb)	   ) \
+)
+
 /** \todo B64(v,v,v,v,v,v,v,v)
  * but that'll be a mess...
  */
