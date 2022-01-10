@@ -190,7 +190,7 @@ inline_initializer _nn {
 // Since the variable is single use, as is obvious, 
 
 // What it should output is obviously based upon compiler, but what it'll look like on GCC is roughly this:
-// ____230__noname1232323_
+// ____34_unl__noname_line_34_LINEPOS_34_un_
 // This is the first instance of _nn (), on line 23 of any file
 
 #define ___nn_internal_concat__(a, b, c) a##b##c
