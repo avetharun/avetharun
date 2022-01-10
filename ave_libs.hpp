@@ -131,6 +131,9 @@
 
 
 
+#endif // ALIB_NO_BINARY
+
+
 #ifndef ALIB_NO_FILE_UTILS
 #include <iosfwd>
 #include <fstream>
@@ -157,9 +160,52 @@ void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
 
 
 
+#ifndef ALIB_NO_CONCAT
+
+#define __concat_internal(a, b, c) a##b##c
+#define concat(a, b, c) __concat_internal(a, b, c)
+
+#endif // ALIB_NO_NONAMES
+
+#ifndef ALIB_NO_NONAMES
+// This may require some explaining. I use these for creating "unnamed" functions and variables, at compile time.
+// Obviously, since they're unnamed, they're single use.
+// What it should output is obviously based upon compiler, but what it'll look like is roughly this:
+// ____230__noname1232323_
+// The easiest way for me to use this, is for unnamed struct initializing lambda functions, which uses a struct similar to this:
+/*
+#include <functional>
+struct inline_initializer{
+    inline_initializer(std::function<void()> i) {
+      i();
+    }
+};
+
+inline_initializer _nn {
+    [&] () {
+        std::cout << "This runs before main()!";
+    }
+};
+
+*/
+
+// It's a dirty trick, I know, but if I want to have a slim main() function, and have it reference external variables to run, 
+// it looks better.
 
 
-#endif // AVETH_BINARY
+#define ___nn_internal_concat__(a, b, c) a##b##c
+#define ___nn_internal_concat(a, b, c) ___nn_internal_concat__(a, b, c)
+#define _nn_internal__(a) ___nn_internal_concat(a, __LINE__, __COUNTER__)
+#define _nn_internal__2__ _nn_internal__(___nn_internal_concat(_noname, __COUNTER__, __LINE__))
+#define _nn_internal__2_1_ ___nn_internal_concat(_, ___nn_internal_concat(__, __LINE__, __COUNTER__), _)
+#define _nn_internal__3__ ___nn_internal_concat(_nn_internal__2_1_, _nn_internal__2__, __COUNTER__)
+#define _nn ___nn_internal_concat(_, _nn_internal__3__, _)
+
+#endif // ALIB_NO_NONAMES
+
+
+
+
 
 
 #endif // __lib_aveth_utils_hpp
