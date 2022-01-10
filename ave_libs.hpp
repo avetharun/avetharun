@@ -162,16 +162,15 @@ void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
 
 #ifndef ALIB_NO_CONCAT
 
-#define __concat_internal(a, b, c) a##b##c
-#define concat(a, b, c) __concat_internal(a, b, c)
-
+#define __concat_internal3(a, b, c) a##b##c
+#define __concat_internal2(a, b) a##b
+#define concat3(a, b, c) __concat_internal3(a, b, c)
+#define concat2(a, b) __concat_internal2(a, b)
 #endif // ALIB_NO_NONAMES
 
 #ifndef ALIB_NO_NONAMES
 // This may require some explaining. I use these for creating "unnamed" functions and variables, at compile time.
 // Obviously, since they're unnamed, they're single use.
-// What it should output is obviously based upon compiler, but what it'll look like is roughly this:
-// ____230__noname1232323_
 // The easiest way for me to use this, is for unnamed struct initializing lambda functions, which uses a struct similar to this:
 /*
 #include <functional>
@@ -188,10 +187,11 @@ inline_initializer _nn {
 };
 
 */
+// Since the variable is single use, as is obvious, 
 
-// It's a dirty trick, I know, but if I want to have a slim main() function, and have it reference external variables to run, 
-// it looks better.
-
+// What it should output is obviously based upon compiler, but what it'll look like on GCC is roughly this:
+// ____230__noname1232323_
+// This is the first instance of _nn (), on line 23 of any file
 
 #define ___nn_internal_concat__(a, b, c) a##b##c
 #define ___nn_internal_concat(a, b, c) ___nn_internal_concat__(a, b, c)
