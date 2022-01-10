@@ -41,7 +41,7 @@
 
 
 
-#ifdef AVETH_BINARY
+#ifndef ALIB_NO_BINARY
 // 
 //      Binary & bit manipulation utilities
 //    - Avetharun
