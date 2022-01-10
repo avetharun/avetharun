@@ -195,11 +195,20 @@ inline_initializer _nn {
 
 #define ___nn_internal_concat__(a, b, c) a##b##c
 #define ___nn_internal_concat(a, b, c) ___nn_internal_concat__(a, b, c)
-#define _nn_internal__(a) ___nn_internal_concat(a, __LINE__, __COUNTER__)
-#define _nn_internal__2__ _nn_internal__(___nn_internal_concat(_noname, __COUNTER__, __LINE__))
-#define _nn_internal__2_1_ ___nn_internal_concat(_, ___nn_internal_concat(__, __LINE__, __COUNTER__), _)
-#define _nn_internal__3__ ___nn_internal_concat(_nn_internal__2_1_, _nn_internal__2__, __COUNTER__)
-#define _nn ___nn_internal_concat(_, _nn_internal__3__, _)
+#define _1_nn_internal__(a) ___nn_internal_concat(a, _LINEPOS_, __LINE__)
+#define _1_nn_internal__2__ _1_nn_internal__(___nn_internal_concat(_noname, _line_, __LINE__))
+#define _1_nn_internal__2_1_ ___nn_internal_concat(_, ___nn_internal_concat(__, __LINE__, _unl), _)
+#define _1_nn_internal__3__ ___nn_internal_concat(_1_nn_internal__2_1_, _1_nn_internal__2__, _un)
+
+
+#define _g_nn_internal__(a, line) ___nn_internal_concat(a, _LINEPOS_, line)
+#define _g_nn_internal__2__(line) _g_nn_internal__(___nn_internal_concat(_noname, _line_, line), line)
+#define _g_nn_internal__2_1_(line) ___nn_internal_concat(_, ___nn_internal_concat(__, line, _unl), _)
+#define _g_nn_internal__3__(line) ___nn_internal_concat(_g_nn_internal__2_1_(line), _g_nn_internal__2__(line), _un)
+
+
+#define _nn ___nn_internal_concat(_, _1_nn_internal__3__, _) // Create no-name object
+#define _nng(line) ___nn_internal_concat(_, _g_nn_internal__3__(line), _) // Get no-name object at file line (LINE)
 
 #endif // ALIB_NO_NONAMES
 
