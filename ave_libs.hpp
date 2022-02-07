@@ -3,10 +3,8 @@
 /**  //
 //ㅤ//
 /////
- @copyright Avetharun 2021 - GNU-GPL3-a
+ @copyright Avetharun 2021-2022 - GNU-GPL3-a
  Let's keep this simple. It follows the GNU GPL3 license, with very few modifications and exceptions.
-
-
  @b Youㅤcan:
   - Use this commercially
   - Distribute modified versions
@@ -14,7 +12,6 @@
   - Patent projects that use this file
   - Use this file and/or project privately, ie. for use in an internal server (See limitations & Exceptions)
   - Use freely under the following conditions
-
  @b Conditions:
   - You must disclose the source file and/or author when distributing this file
   - A copy of this license must be attached to the file, in verbatim
@@ -24,13 +21,9 @@
       A: Beside the change (on top or on bottom, in a comment)
       B: In the AUTHORs section of the file/project
       C: in any changelog that references the file's changes
-
-
  @b Limitationsㅤ/ㅤWhatㅤyouㅤcannotㅤdo
   - The user (you) are not liable for the harmful actions this program or file may cause, if any.
   - Keep code closed source (*See exceptions)
-
-
  @b Exceptions
   - If code is closed source, it must be in a private setting. Examples are as follows:
     EXA: A server used to host and/or distribute files
@@ -41,7 +34,7 @@
 
 
 
-#ifndef ALIB_NO_BINARY
+#if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
 // 
 //      Binary & bit manipulation utilities
 //    - Avetharun
@@ -140,8 +133,8 @@
 
 #endif // ALIB_NO_BINARY
 
+#if defined(ALIB_FORCE_FILE) || (!defined(ALIB_NO_FILE))
 
-#ifndef ALIB_NO_FILE_UTILS
 #include <iosfwd>
 #include <fstream>
 #include <sstream>
@@ -167,15 +160,19 @@ void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
 
 
 
-#ifndef ALIB_NO_CONCAT
+#if defined(ALIB_FORCE_CONCAT) || (!defined(ALIB_NO_CONCAT))
 
 #define __concat_internal3(a, b, c) a##b##c
 #define __concat_internal2(a, b) a##b
+#define __concat4__internal(a,b,c,d) __concat_internal2(a,b)##__concat_internal2(c,d)
+#define concat4(a,b,c,d) __concat4__internal(a,b,c,d)
 #define concat3(a, b, c) __concat_internal3(a, b, c)
 #define concat2(a, b) __concat_internal2(a, b)
-#endif // ALIB_NO_NONAMES
+#endif // ALIB_NO_CONCAT
 
-#ifndef ALIB_NO_NONAMES
+
+
+#if defined(ALIB_FORCE_NONAMES) || (!defined(ALIB_NO_NONAMES))
 // This may require some explaining. I use these for creating "unnamed" functions and variables, at compile time.
 // Obviously, since they're unnamed, they're single use.
 // The easiest way for me to use this, is for unnamed struct initializing lambda functions, which uses a struct similar to this:
@@ -186,19 +183,19 @@ struct inline_initializer{
       i();
     }
 };
-
 inline_initializer _nn {
     [&] () {
         std::cout << "This runs before main()!";
     }
 };
-
 */
 // Since the variable is single use, as is obvious, 
 
 // What it should output is obviously based upon compiler, but what it'll look like on GCC is roughly this:
 // ____34_unl__noname_line_34_LINEPOS_34_un_
-// This is the first instance of _nn (), on line 23 of any file
+// If you want to get the noname as a variable, do _nng(LINE_NUM)
+// This is the first instance of _nn (), on line 23 of any file. At the moment, GCC doesn't have a "remove . " pragma, 
+// so file-specific nonames that are on the same line are impossible.
 
 #define ___nn_internal_concat__(a, b, c) a##b##c
 #define ___nn_internal_concat(a, b, c) ___nn_internal_concat__(a, b, c)
