@@ -1,8 +1,6 @@
 #ifndef __lib_aveth_utils_hpp
 #define __lib_aveth_utils_hpp
-/**  //
-//ㅤ//
-/////
+/**
  @copyright Avetharun 2021-2022 - GNU-GPL3-a
  Let's keep this simple. It follows the GNU GPL3 license, with very few modifications and exceptions.
  @b Youㅤcan:
@@ -29,9 +27,6 @@
     EXA: A server used to host and/or distribute files
     EXB: Used as a base for porting and/or in microcontrollers
  */
-
-
-
 
 
 #if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
@@ -94,15 +89,15 @@
 // Bit manipulation 
 //
 // Sets bit nbit to value bv in variable var
-#define bitset(var,nbit,bv) (val > 0) ? imp_bitenb(var,nbit) : imp_bitdis(var,nbit)
+#define bitset(var,nbit,val) (val > 0) ? imp_bitenb(var,nbit) : imp_bitdis(var,nbit)
 // Sets bit nbit to value bv in variable var
-#define setbit(var,nbit,bv)             bitset(var,nbit,bv) // alias of bitset(...) | See bitset(...) macro
+#define setbit(var,nbit,val)            bitset(var,nbit,val) // alias of bitset(...) | See bitset(...) macro
 // Sets bit nbit to TRUE/1
 #define bitenable(var,nbit)             imp_bitenb(var,nbit)
 // Sets bit nbit to FALSE/0
 #define bitdisable(var,nbit)            imp_bitdis(var,nbit)
 // Get bit nbit from value var
-#define getbit(var,nbit)                imp_getbit(val,nbit)
+#define getbit(var,nbit)                imp_getbit(var,nbit)
 
 // Bit creation
 // 
@@ -216,8 +211,29 @@ inline_initializer _nn {
 
 #endif // ALIB_NO_NONAMES
 
+#if defined(ALIB_FORCE_INLINE_RUNNERS) || (!defined(ALIB_NO_INLINE_RUNNERS)) 
+
+#include <functional>
+// lambda-based runner function. Runs when program initializes all variables.
+struct run {
+	run(std::function<void()> initFunc) {
+		initFunc();
+		free(&initFunc);
+	}
+};
 
 
+#endif // ALIB_NO_INLINE_RUNNERS
+
+
+#if defined(ALIB_FORCE_FUNCPTR) || (!defined(ALIB_NO_FUNCPTR))
+#define noop (void)0
+typedef int  (  *int_2a_f         )(int,int);
+typedef int  (  *int_1a_f         )(int);
+typedef int  (  *int_0a_f         )();
+typedef int  (  *int_1i_1p_f      )(int,void*);
+typedef void (  *void_0a_f        )();
+#endif // ALIB_NO_FUNCPTR
 
 
 
