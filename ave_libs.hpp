@@ -15,7 +15,7 @@
   - A copy of this license must be attached to the file, in verbatim
   - The same (or similar) license must be used if you modify and license your version
   - Changes must be listed. ie. modifying source code must have your name and change in the file.
-    - To follow this it must either be 
+    - To follow this it must either be
       A: Beside the change (on top or on bottom, in a comment)
       B: In the AUTHORs section of the file/project
       C: in any changelog that references the file's changes
@@ -30,15 +30,15 @@
 
 
 #if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
-// 
-//      Binary & bit manipulation utilities
-//    - Avetharun
-// 
+ // 
+ //      Binary & bit manipulation utilities
+ //    - Avetharun
+ // 
 
 
-/* Helper macros. Unless you know what you're doing, don't run these. */
+ /* Helper macros. Unless you know what you're doing, don't run these. */
 
-// Binary decoding to unsigned long v
+ // Binary decoding to unsigned long v
 #define HEX__(n) 0x##n##LU
 #define B8__(x) ((x&0x0000000FLU)?1:0) \
 +((x&0x000000F0LU)?2:0) \
@@ -70,7 +70,7 @@
  * but that'll be a mess...
  */
 
-// Internal bit manipulation
+ // Internal bit manipulation
 #define imp_bitenb(val,n)   ( ( val ) |=  (1<<(n))) // Sets bit n to 1
 #define imp_bitdis(val,n)   ( ( val ) &= ~(1<<(n))) // Sets bit n to 0
 #define imp_flipbit(val,n)  ( ( val ) ^=  (1<<(n))) // Inverts bit n
@@ -89,20 +89,18 @@
 // Bit manipulation 
 //
 // Sets bit nbit to value bv in variable var
-#define bitset(var,nbit,val) (val > 0) ? imp_bitenb(var,nbit) : imp_bitdis(var,nbit)
-// Sets bit nbit to value bv in variable var
-#define setbit(var,nbit,val)            bitset(var,nbit,val) // alias of bitset(...) | See bitset(...) macro
+#define setbitv(var,nbit,val) (val > 0) ? imp_bitenb(var,nbit) : imp_bitdis(var,nbit)
 // Sets bit nbit to TRUE/1
-#define bitenable(var,nbit)             imp_bitenb(var,nbit)
+#define bitenablev(var,nbit)              imp_bitenb(var,nbit)
 // Sets bit nbit to FALSE/0
-#define bitdisable(var,nbit)            imp_bitdis(var,nbit)
+#define bitdisablev(var,nbit)             imp_bitdis(var,nbit)
 // Get bit nbit from value var
-#define getbit(var,nbit)                imp_getbit(var,nbit)
+#define getbitv(var,nbit)                 imp_getbit(var,nbit)
 
 // Bit creation
 // 
 
-/** 
+/**
  * Re-implementation of line @e 66 because compiler complains if I do the following:
  * #define Binary8(b8v) B8(b8v)
  * > Too many/little values in constant
@@ -119,7 +117,7 @@
 + B8(dlsb))
 // Todo: Binary64 to T<long long>
 
-/** 
+/**
  * @todo @b BinaryㅤReading. Effectively reversing the above functions.
  * Planned implementation: Eventually.
  */
@@ -133,21 +131,22 @@
 #include <iosfwd>
 #include <fstream>
 #include <sstream>
+
 void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
     // TODO: do this more elegantly.. But that's hard! So I won't do it. (:
-	std::ifstream file(fname, std::ios::binary);
-	std::streampos fsize = 0;
-    	fsize = file.tellg();
-    	file.seekg( 0, std::ios::end );
-    	fsize = file.tellg() - fsize;
-	file.seekg (0, std::ios::beg); // Go back to the beginning
-	long long _sz = fsize;
-	char* out_dir = (char*)malloc(_sz);
-	file.read(out_dir, _sz);
-	file.close();
-	* out_ = out_dir;
-	* size_ = _sz;
-	// yay memory allocation magic!   
+    std::ifstream file(fname, std::ios::binary);
+    std::streampos fsize = 0;
+    fsize = file.tellg();
+    file.seekg(0, std::ios::end);
+    fsize = file.tellg() - fsize;
+    file.seekg(0, std::ios::beg); // Go back to the beginning
+    long long _sz = fsize;
+    char* out_dir = (char*)malloc(_sz);
+    file.read(out_dir, _sz);
+    file.close();
+    *out_ = out_dir;
+    *size_ = _sz;
+    // yay memory allocation magic!   
 }
 #endif // ALIB_NO_FILE_UTILS
 
@@ -184,7 +183,7 @@ inline_initializer _nn {
     }
 };
 */
-// Since the variable is single use, as is obvious, 
+// Since the variable is single use, as is obvious,
 
 // What it should output is obviously based upon compiler, but what it'll look like on GCC is roughly this:
 // ____34_unl__noname_line_34_LINEPOS_34_un_
@@ -216,10 +215,10 @@ inline_initializer _nn {
 #include <functional>
 // lambda-based runner function. Runs when program initializes all variables.
 struct run {
-	run(std::function<void()> initFunc) {
-		initFunc();
-		free(&initFunc);
-	}
+    run(std::function<void()> initFunc) {
+        initFunc();
+        free(&initFunc);
+    }
 };
 
 
@@ -228,11 +227,11 @@ struct run {
 
 #if defined(ALIB_FORCE_FUNCPTR) || (!defined(ALIB_NO_FUNCPTR))
 #define noop (void)0
-typedef int  (  *int_2a_f         )(int,int);
-typedef int  (  *int_1a_f         )(int);
-typedef int  (  *int_0a_f         )();
-typedef int  (  *int_1i_1p_f      )(int,void*);
-typedef void (  *void_0a_f        )();
+typedef int  (*int_2a_f)(int, int);
+typedef int  (*int_1a_f)(int);
+typedef int  (*int_0a_f)();
+typedef int  (*int_1i_1p_f)(int, void*);
+typedef void (*void_0a_f)();
 #endif // ALIB_NO_FUNCPTR
 
 
