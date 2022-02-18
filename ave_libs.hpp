@@ -1,6 +1,6 @@
 #ifndef __lib_aveth_utils_hpp
 #define __lib_aveth_utils_hpp
-/**
+/** - https://github.com/avetharun/avetharun/blob/main/ave_libs.hpp
  @copyright Avetharun 2021-2022 - GNU-GPL3-a
  Let's keep this simple. It follows the GNU GPL3 license, with very few modifications and exceptions.
  @ You can:
