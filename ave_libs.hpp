@@ -3,7 +3,7 @@
 /**
  @copyright Avetharun 2021-2022 - GNU-GPL3-a
  Let's keep this simple. It follows the GNU GPL3 license, with very few modifications and exceptions.
- @b Youㅤcan:
+ @b You_can:
   - Use this commercially
   - Distribute modified versions
   - Modify this file and/or projects
@@ -19,7 +19,7 @@
       A: Beside the change (on top or on bottom, in a comment)
       B: In the AUTHORs section of the file/project
       C: in any changelog that references the file's changes
- @b Limitationsㅤ/ㅤWhatㅤyouㅤcannotㅤdo
+ @b Limitations_/_What_you_cannot_do
   - The user (you) are not liable for the harmful actions this program or file may cause, if any.
   - Keep code closed source (*See exceptions)
  @b Exceptions
@@ -118,7 +118,7 @@
 // Todo: Binary64 to T<long long>
 
 /**
- * @todo @b BinaryㅤReading. Effectively reversing the above functions.
+ * @todo @b Binary_Reading. Effectively reversing the above functions.
  * Planned implementation: Eventually.
  */
 
