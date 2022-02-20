@@ -1,7 +1,7 @@
 
 Copyright HOLDER YEAR - GNU-GPL3-a
 Let's keep this simple. It follows the GNU GPL3 license, with very few modifications and exceptions.
-    Youㅤcan:
+    You can:
         - Use this commercially
         - Distribute modified versions
         - Modify this file and/or projects
@@ -14,11 +14,11 @@ Let's keep this simple. It follows the GNU GPL3 license, with very few modificat
         - A copy of this license must be attached to the file, in verbatim
         - The same (or similar) license must be used if you modify and license your version
         - Changes must be listed. ie. modifying source code must have your name and change in the file.
-        - To follow this it must either be 
+        - To follow this it must either be
             A: Beside the change (on top or on bottom, in a comment)
             B: In the AUTHORs section of the file/project
             C: in any changelog that references the file's changes
-    Limitationsㅤ/ㅤWhatㅤyouㅤcannotㅤdo
+    Limitations / What you cannot do
         - Keep code closed source (*See exceptions)
     Exceptions
         - If code is closed source, it must be in a private setting. Examples are as follows:
