@@ -234,6 +234,47 @@ typedef int  (*int_1i_1p_f)(int, void*);
 typedef void (*void_0a_f)();
 #endif // ALIB_NO_FUNCPTR
 
-
-
 #endif // __lib_aveth_utils_hpp
+
+
+// begin preprocessor defs that need to be explicitly defined
+
+
+#if defined(ALIB_ANDROID_LOGGING) && !defined(alib_android_logging_helper__)
+#define alib_android_logging_helper__
+    #ifndef PROJECT_NAME
+    #define PROJECT_NAME "UnnamedAndroidProject (DEFINE USING #define PROJECT_NAME '')"
+    #endif
+    #define A_LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, PROJECT_NAME, __VA_ARGS__))
+    #define A_LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, PROJECT_NAME, __VA_ARGS__))
+    #define A_LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, __VA_ARGS__))
+    #define A_LOGF(...) ((void)__android_log_print(ANDROID_LOG_FATAL, PROJECT_NAME, __VA_ARGS__))
+    #define A_LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, PROJECT_NAME, __VA_ARGS__))
+#endif
+
+// Create macros to emulate "public T N = V" used in other languages
+#if defined(ALIB_VARIABLE_MANAGER) && !defined(alib_visibility_helper__)
+#define alib_pubpriv_helper__
+// These macros assume that it's to invert a variable's visibility, so don't use them if you don't want that!
+
+#define public(var) public: var; private:
+
+#define private(var) private: var; public:
+
+#endif
+
+
+#if defined(ALIB_INSTANCER) && !defined(alib_instance_management_helper__)
+#define alib_instance_management_helper__
+
+#define __private_internal_(var) private: var; public:
+// Creates a private(static TYPE* instance)
+#define genInstance(TYPE) \
+    __private_internal_(static TYPE* instance); \
+    static TYPE* GetInstance() { return (instance == nullptr) ? new TYPE() : instance; }
+#define genInstanceDef(TYPE) \
+    TYPE* TYPE::instance = nullptr;
+
+
+
+#endif
