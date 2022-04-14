@@ -28,7 +28,9 @@
     EXB: Used as a base for porting and/or in microcontrollers
  */
 
+// Avetharun : 18-4-22 : added byte modification utilities
 
+#define _CRT_SECURE_NO_WARNINGS
 #if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
  // 
  //      Binary & bit manipulation utilities
@@ -74,7 +76,7 @@
 #define imp_bitenb(val,n)   ( ( val ) |=  (1<<(n))) // Sets bit n to 1
 #define imp_bitdis(val,n)   ( ( val ) &= ~(1<<(n))) // Sets bit n to 0
 #define imp_flipbit(val,n)  ( ( val ) ^=  (1<<(n))) // Inverts bit n
-#define imp_getbit(val,n)   ( ( val ) &   (1<<(n))) // Gets bit n from data val
+#define imp_getbitv(val,n)   ( ( val ) &   (1<<(n))) // Gets bit n from data val
 
 
 
@@ -90,12 +92,15 @@
 //
 // Sets bit nbit to value bv in variable var
 #define setbitv(var,nbit,val) (val > 0) ? imp_bitenb(var,nbit) : imp_bitdis(var,nbit)
+#define setbitsv(var,val,amt) for(int nbit=0; nbit < amt; nbit++) { setbitv(var,nbit,val); }
+#define setbitssv(var,start,val,amt) for(int nbit=start; nbit < start+amt; nbit++) { setbitv(var,nbit,val); }
 // Sets bit nbit to TRUE/1
 #define bitenablev(var,nbit)              imp_bitenb(var,nbit)
 // Sets bit nbit to FALSE/0
 #define bitdisablev(var,nbit)             imp_bitdis(var,nbit)
 // Get bit nbit from value var
-#define getbitv(var,nbit)                 imp_getbit(var,nbit)
+#define getbitv(var,nbit)                 imp_getbitv(var,nbit)
+#define flipbitv(var, nbit)               imp_flipbit(var,nbit)
 
 // Bit creation
 // 
@@ -140,7 +145,7 @@ void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
     file.seekg(0, std::ios::end);
     fsize = file.tellg() - fsize;
     file.seekg(0, std::ios::beg); // Go back to the beginning
-    long long _sz = fsize;
+    size_t _sz = fsize;
     char* out_dir = (char*)malloc(_sz);
     file.read(out_dir, _sz);
     file.close();
@@ -148,6 +153,17 @@ void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
     *size_ = _sz;
     // yay memory allocation magic!   
 }
+
+inline bool alib_file_exists(const char* name) {
+    if (FILE* file = fopen(name, "r")) {
+        fclose(file);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 #endif // ALIB_NO_FILE_UTILS
 
 
@@ -214,10 +230,9 @@ inline_initializer _nn {
 
 #include <functional>
 // lambda-based runner function. Runs when program initializes all variables.
-struct run {
-    run(std::function<void()> initFunc) {
+struct alib_inline_run {
+    alib_inline_run(std::function<void()> initFunc) {
         initFunc();
-        free(&initFunc);
     }
 };
 
@@ -225,14 +240,226 @@ struct run {
 #endif // ALIB_NO_INLINE_RUNNERS
 
 
+#if (defined(ALIB_FORCE_WIN_UTILS) && defined(_WIN32 )) || (!defined(ALIB_NO_WIN_UTILS)) 
+#include <Windows.h>
+void HideConsole()
+{
+    ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+}
+
+void ShowConsole()
+{
+    ::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+}
+
+bool IsConsoleVisible()
+{
+    return ::IsWindowVisible(::GetConsoleWindow()) != FALSE;
+}
+#endif
+
 #if defined(ALIB_FORCE_FUNCPTR) || (!defined(ALIB_NO_FUNCPTR))
 #define noop (void)0
-typedef int  (*int_2a_f)(int, int);
-typedef int  (*int_1a_f)(int);
+typedef int  (*int_2i_f)(int, int);
+typedef int  (*int_1i_f)(int);
 typedef int  (*int_0a_f)();
 typedef int  (*int_1i_1p_f)(int, void*);
 typedef void (*void_0a_f)();
+typedef void (*void_1i_f)(int);
+typedef void (*void_2i_f)(int, int);
+typedef void (*void_1pc_1i_f)(const char*, uint32_t);
 #endif // ALIB_NO_FUNCPTR
+
+
+#if defined(ALIB_FORCE_BYTE_UTILS) || (!defined(ALIB_NO_BYTE_UTILS))
+#include <cmath>
+unsigned long alib_fnull(const char* arr) {
+    int n_t_offset = 0;
+    while (*arr++ != '\0') { n_t_offset++; }
+    return n_t_offset;
+}
+unsigned long alib_n_fnull(const char* arr, int limit) {
+    for (int i = 0; i < limit; i++) {
+        if (arr[i] == '\0') {
+            return i;
+        }
+    }
+    return 0;
+}
+
+int alib_log(int base, int n) {
+#ifndef _CMATH_
+    // 75% as fast as cmath, if using recursion. If we have cmath avalible, use that instead.
+    return (n > base - 1)
+        ? 1 + alib_log(n / base, base)
+        : 0;
+#else
+    return (int)(log(n) / log(base));
+#endif
+}
+int alib_digitsInNum(long n, int base = 10)
+{
+    if (n == 0) { return 1; }
+    if (n < 0) {
+        n *= -1;
+    }
+    // log using base, then
+    // taking it to the lowest int then add 1
+    return (int)floor(alib_log(base, n)) + 1;
+}
+
+// Get digits of [num], formatted as ASCII (by default, pass false to disable)
+// arr[0] is the amount of digits in the array
+char* alib_getDigitsOfNumber(int num, bool ascii = true) {
+    int amt_digits = alib_digitsInNum(num, 10);
+    if (amt_digits <= 0) {
+        amt_digits = 1;
+    }
+    char* digits = (char*)malloc(amt_digits + 1);
+    digits[0] = amt_digits;
+    int i = 1;
+    while (num != 0)
+    {
+        // What even is math?
+        const int least_significant_digit = num % 10;
+        digits[i] = (least_significant_digit + (ascii) ? 48 : 0);
+        num /= 10;
+        i++;
+    }
+    return digits;
+}
+
+const char* alib_bit_rep[16] = {
+    "0000","0001","0010","0011",
+    "0100","0101","0110","0111",
+    "1000","1001","1010","1011",
+    "1100","1101","1110","1111",
+};
+
+void alib_print_byte(uint8_t byte)
+{
+    printf("%s%s", alib_bit_rep[byte >> 4], alib_bit_rep[byte & 0x0F]);
+}
+
+int alib_endswith(const char* str, const char* suffix)
+{
+    if (!str || !suffix)
+        return 0;
+    size_t lenstr = strlen(str);
+    size_t lensuffix = strlen(suffix);
+    if (lensuffix > lenstr)
+        return 0;
+    return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
+}
+
+int alib_getchrpos(const char* array, char c, size_t len)
+{
+    for (size_t i = 0; i < len; i++)
+    {
+        if (array[i] == c)
+            return (int)i;
+    }
+    return -1;
+}
+
+#include <regex>		// regex, sregex_token_iterator
+#include <algorithm>    // copy
+#include <iterator>     // back_inserter
+#include <iomanip>
+
+void alib_split(std::string arr, std::string del, std::vector<std::string>* out)
+{
+    size_t start = 0;
+    size_t end = arr.find(del);
+    while (end != -1) {
+        out->push_back(arr.substr(start, end - start));
+        start = end + del.size();
+        end = arr.find(del, start);
+    }
+    out->push_back(arr.substr(start, end - start));
+}
+
+// Note: ONLY supports ' ' as a delimeter!
+void alib_split_quoted(std::string arr, std::vector<std::string>* out) {
+
+    std::istringstream iss{ arr };
+    std::string tmp;
+
+    while (iss >> std::quoted(tmp)) {
+        out->push_back(tmp);
+    }
+
+}
+
+char alib_get_byte(void* data, int offset) {
+    return ( (char*)data ) [offset];
+}
+char alib_get_byte(void* data) {
+    return ((char*)data)[0];
+}
+
+void alib_set_byte(void* data, char byte, int offset) {
+    reinterpret_cast<char*>(data)[offset] = byte;
+}
+void alib_set_byte(void* data, char byte) {
+    reinterpret_cast<char*>(data)[0] = byte;
+}
+
+
+size_t alib_2d_ar_pos(size_t amt, int x, int y, int bytes_per_step = 4) {
+    return y * amt + x * bytes_per_step;
+}
+size_t alib_va_arg_length(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    size_t bufsz = snprintf(NULL, 0, fmt, args);
+    va_end(args);
+    return bufsz;
+}
+size_t alib_va_arg_length(const char* fmt, va_list args) {
+    size_t bufsz = snprintf(NULL, 0, fmt, args);
+    return bufsz;
+
+}
+
+// Note: you're expected to supply an empty pointer & manage memory after this!
+void alib_va_arg_parse(char* buf, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    size_t bufsz = snprintf(NULL, 0, fmt, args);
+    buf = (char*)malloc(bufsz + 1);
+    vsprintf((char*)buf, fmt, args);
+    va_end(args);
+}
+void alib_va_arg_parse(char* buf, const char* fmt, va_list args) {
+    size_t bufsz = snprintf(NULL, 0, fmt, args);
+    buf = (char*)malloc(bufsz + 1);
+    vsprintf((char*)buf, fmt, args);
+}
+const char* alib_va_arg_parse(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    size_t bufsz = snprintf(NULL, 0, fmt, args);
+    const char* _buf = (const char*)malloc(bufsz);
+    vsprintf((char*)_buf, fmt, args);
+    va_end(args);
+    return _buf;
+}
+const char* alib_va_arg_parse(const char* fmt, va_list args) {
+    size_t bufsz = snprintf(NULL, 0, fmt, args);
+    const char* _buf = (const char*)malloc(bufsz);
+    vsprintf((char*)_buf, fmt, args);
+    return _buf;
+}
+
+
+va_list alib_va_list_parse(char padding = 0,  ...) {
+    va_list args;
+    va_start(args, padding);
+    va_end(args);
+    return args;
+}
+#endif // ALIB_NO_BYTE_UTILS
 
 #endif // __lib_aveth_utils_hpp
 
@@ -242,14 +469,14 @@ typedef void (*void_0a_f)();
 
 #if defined(ALIB_ANDROID_LOGGING) && !defined(alib_android_logging_helper__)
 #define alib_android_logging_helper__
-    #ifndef PROJECT_NAME
-    #define PROJECT_NAME "UnnamedAndroidProject (DEFINE USING #define PROJECT_NAME '')"
-    #endif
-    #define A_LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, PROJECT_NAME, __VA_ARGS__))
-    #define A_LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, PROJECT_NAME, __VA_ARGS__))
-    #define A_LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, __VA_ARGS__))
-    #define A_LOGF(...) ((void)__android_log_print(ANDROID_LOG_FATAL, PROJECT_NAME, __VA_ARGS__))
-    #define A_LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, PROJECT_NAME, __VA_ARGS__))
+#ifndef PROJECT_NAME
+#define PROJECT_NAME "UnnamedAndroidProject (DEFINE USING #define PROJECT_NAME '')"
+#endif
+#define A_LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, PROJECT_NAME, __VA_ARGS__))
+#define A_LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, PROJECT_NAME, __VA_ARGS__))
+#define A_LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, __VA_ARGS__))
+#define A_LOGF(...) ((void)__android_log_print(ANDROID_LOG_FATAL, PROJECT_NAME, __VA_ARGS__))
+#define A_LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, PROJECT_NAME, __VA_ARGS__))
 #endif
 
 // Create macros to emulate "public T N = V" used in other languages
@@ -258,7 +485,7 @@ typedef void (*void_0a_f)();
 // These macros assume that it's to invert a variable's visibility, so don't use them if you don't want that!
 
 #define public(var) public: var; private:
-
+`
 #define private(var) private: var; public:
 
 #endif
@@ -269,7 +496,7 @@ typedef void (*void_0a_f)();
 
 #define __private_internal_(var) private: var; public:
 // Creates a private(static TYPE* instance)
-#define genInstance(TYPE) \
+#define genInstan                  NNNNNNNNNNNNNNNNNNNNNNNNNNVB        
     __private_internal_(static TYPE* instance); \
     static TYPE* GetInstance() { return (instance == nullptr) ? new TYPE() : instance; }
 #define genInstanceDef(TYPE) \
