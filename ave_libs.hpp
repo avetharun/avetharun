@@ -28,7 +28,11 @@
     EXB: Used as a base for porting and/or in microcontrollers
  */
 
+
 // Avetharun : 18-4-22 : added byte modification utilities
+// Avetharun : 19-4-22 : added beginswith function, and renamed readFileBytes to alib_file_read
+
+
 
 #define _CRT_SECURE_NO_WARNINGS
 #if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
@@ -137,7 +141,7 @@
 #include <fstream>
 #include <sstream>
 
-void readFileBytes(const char* fname, char** out_, unsigned long long* size_) {
+void alib_read_file(const char* fname, char** out_, unsigned long long* size_) {
     // TODO: do this more elegantly.. But that's hard! So I won't do it. (:
     std::ifstream file(fname, std::ios::binary);
     std::streampos fsize = 0;
@@ -352,6 +356,16 @@ int alib_endswith(const char* str, const char* suffix)
     return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
 }
 
+int alib_beginswith(const char* str, const char* prefix)
+{
+    if (!str || !prefix)
+        return 0;
+    size_t lenstr = strlen(str);
+    size_t lenprefix = strlen(prefix);
+    if (lenprefix > lenstr)
+        return 0;
+    return strncmp(str, prefix, lenprefix) == 0;
+}
 int alib_getchrpos(const char* array, char c, size_t len)
 {
     for (size_t i = 0; i < len; i++)
@@ -406,8 +420,8 @@ void alib_set_byte(void* data, char byte) {
 }
 
 
-size_t alib_2d_ar_pos(size_t amt, int x, int y, int bytes_per_step = 4) {
-    return y * amt + x * bytes_per_step;
+size_t alib_2d_ar_pos(size_t pitch, size_t x, size_t y, size_t bytes_per_step = 4) {
+    return y * pitch + x * bytes_per_step;
 }
 size_t alib_va_arg_length(const char* fmt, ...) {
     va_list args;
