@@ -29,9 +29,9 @@
  */
 
 
-// Avetharun : 18-4-22 : added byte modification utilities
-// Avetharun : 19-4-22 : added beginswith function, and renamed readFileBytes to alib_file_read
-
+// Avetharun : 4-14-22 : added byte modification utilities
+// Avetharun : 4-15-22 : added beginswith function, and renamed readFileBytes to alib_file_read
+// Avetharun : 4-17-22 : added "copy sign" function
 
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -473,6 +473,15 @@ va_list alib_va_list_parse(char padding = 0,  ...) {
     va_end(args);
     return args;
 }
+
+// Copies the sign-ed ness of A into B
+void alib_copy_signed(signed int a, signed int * b) {
+    *b = (a < 0) ? -*b : (*b < 0) ? -*b : *b;
+}
+
+
+
+
 #endif // ALIB_NO_BYTE_UTILS
 
 #endif // __lib_aveth_utils_hpp
@@ -499,7 +508,6 @@ va_list alib_va_list_parse(char padding = 0,  ...) {
 // These macros assume that it's to invert a variable's visibility, so don't use them if you don't want that!
 
 #define public(var) public: var; private:
-`
 #define private(var) private: var; public:
 
 #endif
