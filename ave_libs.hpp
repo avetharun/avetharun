@@ -504,7 +504,7 @@ void alib_copy_signed(signed int a, signed int * b) {
 
 // Create macros to emulate "public T N = V" used in other languages
 #if defined(ALIB_VARIABLE_MANAGER) && !defined(alib_visibility_helper__)
-#define alib_pubpriv_helper__
+#define alib_visibility_helper__
 // These macros assume that it's to invert a variable's visibility, so don't use them if you don't want that!
 
 #define public(var) public: var; private:
@@ -518,7 +518,7 @@ void alib_copy_signed(signed int a, signed int * b) {
 
 #define __private_internal_(var) private: var; public:
 // Creates a private(static TYPE* instance)
-#define genInstan                  NNNNNNNNNNNNNNNNNNNNNNNNNNVB        
+#define genInstance(TYPE) \
     __private_internal_(static TYPE* instance); \
     static TYPE* GetInstance() { return (instance == nullptr) ? new TYPE() : instance; }
 #define genInstanceDef(TYPE) \
