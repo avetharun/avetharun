@@ -508,6 +508,7 @@ void alib_copy_signed(signed int a, signed int * b) {
 // These macros assume that it's to invert a variable's visibility, so don't use them if you don't want that!
 
 #define public(var) public: var; private:
+`
 #define private(var) private: var; public:
 
 #endif
