@@ -335,7 +335,7 @@ size_t alib_nulpos(const char* arr) {
 size_t alib_nulposn(const char* arr, int limit) {
     return alib_n_fnull(arr, limit);
 }
-
+#define __alib_haslogm__
 int alib_log(int base, int n) {
 #ifndef _CMATH_
     // 75% as fast as cmath, if using recursion. If we have cmath avalible, use that instead.
@@ -346,6 +346,19 @@ int alib_log(int base, int n) {
     return (int)(log(n) / log(base));
 #endif
 }
+#define __alib_haswrange__
+bool alib_wrange(int min, int max, int val) {
+    return ((val - max) * (val - min) <= 0);
+}
+// Taken from python's usage of math.isclose()
+bool alib_fclose(float first, float second, float rel_tol = 1e-09, float abs_tol = 0.0) {
+    return abs(first - second) <= max(rel_tol * max(abs(first), abs(second)), abs_tol);
+}
+bool alib_dclose(double first, double second, double rel_tol = 1e-09, double abs_tol = 0.0) {
+    return abs(first - second) <= max(rel_tol * max(abs(first), abs(second)), abs_tol);
+}
+
+
 int alib_digitsInNum(long n, int base = 10)
 {
     if (n == 0) { return 1; }
@@ -534,7 +547,7 @@ const char* alib_va_arg_parse(const char* fmt, va_list args) {
     vsprintf((char*)_buf, fmt, args);
     return _buf;
 }
-const char* strfmt(const char* fmt, ...) {
+const char* alib_strfmt(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     size_t bufsz = snprintf(NULL, 0, fmt, args);
@@ -587,6 +600,17 @@ std::vector<std::string> alib_split(const std::string& s, char delim) {
         elems.push_back(std::move(item)); // if C++11 (based on comment from @mchiasson)
     }
     return elems;
+}
+void alib_strsplit(std::string& str, char delim, std::vector<std::string>& out)
+{
+    size_t start;
+    size_t end = 0;
+
+    while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
+    {
+        end = str.find(delim, start);
+        out.push_back(str.substr(start, end - start));
+    }
 }
 // Note: ONLY supports ' ' as a delimeter!
 void alib_split_quoted(std::string arr, std::vector<std::string>* out) {
@@ -678,7 +702,7 @@ std::string alib_upper(const char* s)
 //
 // nlohmann/json utilities
 //
-#if ( defined(ALIB_JSON_NLOHHMAN) ) && (!defined(alib_json_utilities__included_))
+#if defined(ALIB_JSON_NLOHHMAN) && (!defined(alib_json_utilities__included_))
 #define alib_json_utilities__included_
 // nlohhman/json included, or alib_force_json defined use these utilities
 
@@ -701,7 +725,36 @@ std::string alib_j_getstr(JSONREF j) {
 const char* alib_j_getchara(JSONREF j) {
     return alib_j_getstr(j).c_str();
 }
+bool alib_j_streq(JSONREF j, std::string match) {
+    std::string src = j.get<std::string>();
+    if (src.size() < match.size()) {}
+    return (src.compare(match) == 0);
+}
+bool alib_j_ieq(JSONREF j, int match) {
+    return (j.get<int>() == match);
+}
+bool alib_j_feq(JSONREF j, float match) {
+    return (j.get<float>() == match);
+}
+// If [j] contains keys formatted as "a<newline>b<newline>c"
+// Note: replace <newline> with \\n (unescaped due to comment)
+// (eg if the json element is {"a":{"b":{"c":"d"}}} it would return true)
+bool alib_j_contkeys(___alib__json j, std::string _s) {
+    ___alib__json j_t = j;
+    std::vector<std::string> s_keys;
+    alib_strsplit(_s, '\n', s_keys);
 
+
+    for (int i = 0; i < s_keys.size(); i++) {
+        std::string s_cur = s_keys[i];
+        if (!j_t.contains(s_cur)) {
+            return false;
+        }
+        j_t = j_t.at(s_cur);
+    }
+    return true;
+
+}
 #undef JSONREF
 
 
