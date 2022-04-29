@@ -33,7 +33,9 @@
 // Avetharun : 4-15-22 : added beginswith function, and renamed readFileBytes to alib_file_read
 // Avetharun : 4-17-22 : added "copy sign" function
 // Avetharun : 4-27-22 : added json utilities & fixed #pragma once issue, causing things that must be declared seperately to not work.
-
+// Avetharun : 4-29-22 : modify the way function pointer types are created, now uses a macro. Formatted as follows:
+// // d_typedef_func_ty(ret_val, ty_name, ty_arg_types_variadic)
+// // Note: semicolon is NOT needed, as if it's put at the end, it will produce an intellisense warning. Apparently it's by design. Ignore it if it happens.
 
 #define _CRT_SECURE_NO_WARNINGS
 #if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
@@ -302,15 +304,17 @@ bool alib_console_visible()
 #endif
 
 #if defined(ALIB_FORCE_FUNCPTR) || (!defined(ALIB_NO_FUNCPTR))
+// Note: ignore any "function definition for typedef_func_ty" or "Y is not defined" errors. They're temporary.
+#define d_typedef_func_ty(return_z, name, ...) typedef return_z (*name)(##__VA_ARGS__);
 #define noop (void)0
-typedef int  (*int_2i_f)(int, int);
-typedef int  (*int_1i_f)(int);
-typedef int  (*int_0a_f)();
-typedef int  (*int_1i_1p_f)(int, void*);
-typedef void (*void_0a_f)();
-typedef void (*void_1i_f)(int);
-typedef void (*void_2i_f)(int, int);
-typedef void (*void_1pc_1i_f)(const char*, uint32_t);
+d_typedef_func_ty(int, int_2i_f, int, int)
+d_typedef_func_ty(int, int_1i_f, int)
+d_typedef_func_ty(int, int_0a_f)
+d_typedef_func_ty(void, int_1i_1p_f, int, void*)
+d_typedef_func_ty(void, void_0a_f)
+d_typedef_func_ty(void, void_1i_f, int)
+d_typedef_func_ty(void, void_2i_f, int, int)
+d_typedef_func_ty(void, void_1pc_1i32_f, const char*, uint32_t)
 #endif // ALIB_NO_FUNCPTR
 
 
