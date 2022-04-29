@@ -34,8 +34,10 @@
 // Avetharun : 4-17-22 : added "copy sign" function
 // Avetharun : 4-27-22 : added json utilities & fixed #pragma once issue, causing things that must be declared seperately to not work.
 // Avetharun : 4-29-22 : modify the way function pointer types are created, now uses a macro. Formatted as follows:
-// // d_typedef_func_ty(ret_val, ty_name, ty_arg_types_variadic)
-// // Note: semicolon is NOT needed, as if it's put at the end, it will produce an intellisense warning. Apparently it's by design. Ignore it if it happens.
+	 // d_typedef_func_ty(ret_val, ty_name, ty_arg_types_variadic)
+	 // Note: semicolon is NOT needed, as if it's put at the end, it will produce an intellisense warning. Apparently it's by design. Ignore it if it happens.
+	 // Original impl: https://github.com/avetharun/avetharun/blob/bf49a022c7021fb3200231722f7975f167e1cf9f/ave_libs.hpp#L308
+
 
 #define _CRT_SECURE_NO_WARNINGS
 #if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
