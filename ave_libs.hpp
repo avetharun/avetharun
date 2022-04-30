@@ -29,17 +29,17 @@
  */
 
 
-// Avetharun : 4-14-22 : added byte modification utilities
-// Avetharun : 4-15-22 : added beginswith function, and renamed readFileBytes to alib_file_read
-// Avetharun : 4-17-22 : added "copy sign" function
-// Avetharun : 4-27-22 : added json utilities & fixed #pragma once issue, causing things that must be declared seperately to not work.
-// Avetharun : 4-29-22 : modify the way function pointer types are created, now uses a macro. Formatted as follows:
-	 // d_typedef_func_ty(ret_val, ty_name, ty_arg_types_variadic)
-	 // Note: semicolon is NOT needed, as if it's put at the end, it will produce an intellisense warning. Apparently it's by design. Ignore it if it happens.
-	 // Original impl: https://github.com/avetharun/avetharun/blob/bf49a022c7021fb3200231722f7975f167e1cf9f/ave_libs.hpp#L308
-
-
+ // Avetharun : 4-14-22 : added byte modification utilities
+ // Avetharun : 4-15-22 : added beginswith function, and renamed readFileBytes to alib_file_read
+ // Avetharun : 4-17-22 : added "copy sign" function
+ // Avetharun : 4-27-22 : added json utilities & fixed  issue, causing things that must be declared seperately to not work.
+ // Avetharun : 4-29-22 : modify the way function pointer types are created, now uses a macro. Formatted as follows:
+      // d_typedef_func_ty(ret_val, ty_name, ty_arg_types_variadic)
+      // Note: semicolon is NOT needed, as if it's put at the end, it will produce an intellisense warning. Apparently it's by design. Ignore it if it happens.
+      // Original impl: https://github.com/avetharun/avetharun/blob/bf49a022c7021fb3200231722f7975f167e1cf9f/ave_libs.hpp#L308
+                       // Also added assert handling
 #define _CRT_SECURE_NO_WARNINGS
+
 #if defined(ALIB_FORCE_BINARY) || (!defined(ALIB_NO_BINARY))
  // 
  //      Binary & bit manipulation utilities
@@ -379,12 +379,12 @@ int alib_digitsInNum(long n, int base = 10)
 // Get digits of [num], formatted as ASCII (by default, pass false to disable)
 // arr[0] is the amount of digits in the array
 char* alib_getDigitsOfNumber(int num, bool ascii = true) {
-    int amt_digits = alib_digitsInNum(num, 10);
+    int amt_digits = alib_digitsInNum(num, 10) + 1;
     if (amt_digits <= 0) {
         amt_digits = 1;
     }
-    char* digits = (char*)malloc(amt_digits + 1);
-    digits[0] = amt_digits;
+    char* digits = (char*)malloc(amt_digits);
+    *digits = amt_digits;
     int i = 1;
     while (num != 0)
     {
@@ -406,7 +406,7 @@ const char* alib_bit_rep[16] = {
 
 // If size != 0, leave size as is
 void alib_internal_reqlen(size_t* sz, const char* arr) {
-    if ((* sz) == 0) {
+    if ((*sz) == 0) {
         (*sz) = strlen(arr);
     }
 }
@@ -492,7 +492,7 @@ const char* alib_rmocc(const char* src, char c, size_t len = 0) {
 
 // Set byte at offset of array 
 char alib_get_byte(void* data, int offset) {
-    return ( (char*)data ) [offset];
+    return ((char*)data)[offset];
 }
 // Set byte at array[0]
 char alib_get_byte(void* data) {
@@ -564,7 +564,7 @@ const char* alib_strfmt(const char* fmt, ...) {
 }
 
 
-va_list alib_va_list_parse(char padding = 0,  ...) {
+va_list alib_va_list_parse(char padding = 0, ...) {
     va_list args;
     va_start(args, padding);
     va_end(args);
@@ -572,10 +572,16 @@ va_list alib_va_list_parse(char padding = 0,  ...) {
 }
 
 // Copies the sign-ed ness of A into B
-void alib_copy_signed(signed int a, signed int * b) {
+void alib_copy_signed(signed int a, signed int* b) {
     *b = (a < 0) ? -*b : (*b < 0) ? -*b : *b;
 }
-
+#include <codecvt>
+#include <locale>
+std::wstring convert_wstr(std::string str) {
+    std::wstring str2(str.length(), L' '); // Make room for characters
+    std::copy(str.begin(), str.end(), str2.begin());
+    return str2;
+}
 
 // Begin std::string specific utilities
 
@@ -611,7 +617,11 @@ void alib_strsplit(std::string& str, char delim, std::vector<std::string>& out)
 {
     size_t start;
     size_t end = 0;
-
+    // Doesn't contain 'delim', so return the base string itself.
+    if ((str.find_first_not_of(delim, end)) == std::string::npos) {
+        out.push_back(str);
+        return;
+    }
     while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
     {
         end = str.find(delim, start);
@@ -660,8 +670,53 @@ std::string alib_upper(const char* s)
     return s2;
 }
 
+int alib_scale_percent(int first, int percent) {
+    if (percent == 100) { return first; }
+    if (percent < 100) {
+        return first / percent;
+    }
+    return first * percent;
+}
+
+template <typename T>
+void alib_remove_any_of(std::vector<T> _v, T vy) {
+    for (int i = 0; i < _v.size(); i++) {
+        if (_v.at(i) == vy) {
+            printf("Removed sprite at %d\n", i);
+            _v.erase(_v.begin() + i);
+        }
+    }
+}
 
 #endif // ALIB_NO_BYTE_UTILS
+
+#if defined(ALIB_FORCE_ASSERT) || (!defined(ALIB_NO_ASSERT))
+#include <assert.h>
+#include <stdio.h>
+#include <conio.h>
+#define alib_assert(condition, fmt, ...) if (condition) { fprintf(stderr, fmt, __VA_ARGS__); fprintf(stderr, "\nPress any key to exit.\n"); while (!_getch()) {} exit(-1); }
+#define alib_asserti(condition, fmt, ...) if (condition) { \
+    fprintf(stderr, fmt, __VA_ARGS__); fprintf(stderr, "\nIgnore? Y/N"); \
+    int k = _getch();\
+    if (tolower(k)== 'y') {} else if (tolower(k) == 'n') {\
+        exit(-1);\
+    } else {fprintf(stderr, "Not a valid input. Please type Y/N");}\
+}
+#if defined (_WIN32)
+#include <Windows.h>
+#define alib_assert_p(condition,fmt, ...) if( condition ){ MessageBox(0, convert_wstr(alib_strfmt(fmt, __VA_ARGS__)).c_str(), L"Assertion failed", MB_OK); exit(-1); }
+#define alib_assert_pi(condition, fmt, ...) \
+    if (condition) { \
+        int state = MessageBox(0, convert_wstr(alib_strfmt(fmt, __VA_ARGS__)).c_str(), L"Assertion failed. Ignore?", MB_YESNO)); \
+        switch (state){\
+        case IDNO:\
+            exit(1);\
+            break;\
+        }\
+    }
+#endif
+#endif // ALIB_FORCE_ASSERT
+
 
 #endif // __lib_aveth_utils_hpp
 
@@ -736,6 +791,15 @@ bool alib_j_streq(JSONREF j, std::string match) {
     if (src.size() < match.size()) {}
     return (src.compare(match) == 0);
 }
+bool alib_j_costr(JSONREF j, std::string match) {
+    if (j.is_array()) {
+        for (int i = 0; i < j.size(); i++) {
+            if (j[i].get<std::string>().compare(match.c_str()) == 0) { return true; };
+        }
+    }
+    // If j_ty = array : the following will always return false.
+    return j.contains(match);
+}
 bool alib_j_ieq(JSONREF j, int match) {
     return (j.get<int>() == match);
 }
@@ -765,5 +829,3 @@ bool alib_j_contkeys(___alib__json j, std::string _s) {
 
 
 #endif
-
-
