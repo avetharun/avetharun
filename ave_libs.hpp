@@ -44,7 +44,15 @@
 // Production builds should set NDEBUG=1
 #define NDEBUG false
 #endif
-
+bool alib_can_reach_mem(void* ptr) {
+    __try {
+        char prefix = *(((char*)ptr)); //Get the first byte. If this doesn't cause an error, then we can reach this.
+        return true;
+    }
+    __except (true) { //Catch all unique exceptions (Windows exceptions) 
+        return false; //Can't reach this memory
+    }
+}
 #ifndef ALIB_DEBUG_BUILD
 #define ALIB_DEBUG_BUILD !NDEBUG
 #endif
@@ -743,13 +751,18 @@ std::string alib_upper(const char* s)
     return s2;
 }
 
-int alib_scale_percent(int first, int percent) {
-    if (percent == 100) { return first; }
-    if (percent < 100) {
-        return first / percent;
-    }
-    return first * percent;
+int alib_percent(long double num, double percent) {
+    long double _n_d100 = (num / 100);
+    return lroundl( _n_d100 * percent);
 }
+
+
+int alib_percents(int base, std::string percent_str) {
+    if ((alib_endswith(percent_str.c_str(), "%"))) percent_str.erase(percent_str.end());
+    int percent = atoi(percent_str.c_str());
+    return alib_percent(base, percent);
+}
+
 #include <cmath>
 #define alib_max(a,b) (((a) > (b)) ? (a) : (b))
 #define alib_min(a,b) (((a) < (b)) ? (a) : (b))
@@ -812,39 +825,22 @@ T& alib_get_if_any(std::any _ta) {
 template <typename T>
 void alib_invalidatev(std::vector<T> __v) {
     for (int i = 0; i < __v.size(); i++) {
-        if (std::is_pointer<T>()) {
-            __v.at(i)->operator~();
-            continue;
-        }
-        __v.at(i).operator~();
+        delete &__v.at(i);
     }
     __v.clear();
 }
 template <typename K = std::string, typename V>
 void alib_invalidatem(std::map<K, V> m) {
     for (const auto& kv : m) {
-        if (std::is_pointer<V>()) {
-            (*kv.second).operator~();
-            continue;
-        }
-        else {
-            (*kv.second).operator~();
-        }
+        delete kv.second;
     }
     m.clear();
 }
-template <typename V_T, typename PREDICATE>
-void alib_remove_if(std::vector<V_T> _vec, PREDICATE _p) {
+template <typename V_T>
+void alib_remove_if(std::vector<V_T> _vec, std::function<bool(V_T)> _p) {
     for (int i = 0; i < _vec.size(); i++) {
-        if (std::is_function<PREDICATE>()) {
-            if ((std::function)(_p)()) {
-                _vec.erase(_vec.begin() + i);
-            }
-        }
-        else {
-            if (_p) {
-                _vec.clear();
-            }
+        if (_p(_vec.at(i))) {
+            _vec.erase(_vec.begin() + i);
         }
     }
 }
