@@ -9,4 +9,4 @@ Here's a few of my projects:
 
 [input_scancodes.h](https://github.com/avetharun/avetharun/blob/main/input_scancodes.h)
 
-[Astra & CWlib](https://github.com/avetharun/astra-game)
+[Einoki & CWlib](https://github.com/avetharun/astra-game)
