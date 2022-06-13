@@ -1,5 +1,5 @@
 
-Copyright HOLDER YEAR - GNU-GPL3-a (https://github.com/avetharun/avetharun/blob/main/gnu_gpl_3_a_LICENSE)
+Copyright HOLDER YEAR - GNU-GPL3-a (rev 0.1) (https://github.com/avetharun/avetharun/blob/main/gnu_gpl_3_a_LICENSE)
 Let's keep this simple. It follows the GNU GPL3 license, with very few modifications and exceptions.
     You can:
         - Use this commercially
@@ -10,9 +10,9 @@ Let's keep this simple. It follows the GNU GPL3 license, with very few modificat
         - Use freely under the following conditions
     Conditions:
         - The user (you) are not liable for the harmful actions this program or file may cause, if any.
-        - You must disclose the source file and/or author when distributing this file
+        - You must disclose the source file and/or author when distributing this file or project using this license
         - A copy of this license must be attached to the file, in verbatim
-        - The same (or similar) license must be used if you modify and license your version
+        - The same (or similar) license must be used if you modify and license your version of this project or file
         - Changes must be listed. ie. modifying source code must have your name and change in the file.
         - To follow this it must either be
             A: Beside the change (on top or on bottom, in a comment)
