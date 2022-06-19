@@ -11,4 +11,4 @@ Here's a few of my projects:
 
 [Einoki & CWlib](https://github.com/avetharun/astra-game)
 
-[Rosemary Project](https://github.com/avetharun/rosemary-project-native)
+[*Rosemary Project*](https://github.com/avetharun/rosemary-project-native)
