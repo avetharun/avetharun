@@ -10,3 +10,5 @@ Here's a few of my projects:
 [input_scancodes.h](https://github.com/avetharun/avetharun/blob/main/input_scancodes.h)
 
 [Einoki & CWlib](https://github.com/avetharun/astra-game)
+
+[Rosemary Project](https://github.com/avetharun/rosemary-project-native)
