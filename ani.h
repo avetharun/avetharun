@@ -34,29 +34,29 @@ namespace ani {
 	///editor.putString("MY_KEY","HELLO");
 	///editor.commit();
 
-	class SharedPreferences_Editor{
+	class SharedPreferences_Editor {
 	public:
-		SharedPreferences_Editor(JNIEnv* env,const jobject joSharedPreferences_Edit):env(env),joSharedPreferences_Edit(joSharedPreferences_Edit){
+		SharedPreferences_Editor(JNIEnv* env, const jobject joSharedPreferences_Edit) :env(env), joSharedPreferences_Edit(joSharedPreferences_Edit) {
 			//find the methods for putting values into Shared preferences via the editor
 			jclass jcSharedPreferences_Editor = env->GetObjectClass(joSharedPreferences_Edit);
-			jmPutBoolean=env->GetMethodID(jcSharedPreferences_Editor,"putBoolean","(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;");
-			jmPutInt=env->GetMethodID(jcSharedPreferences_Editor,"putInt","(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;");
-			jmPutString=env->GetMethodID(jcSharedPreferences_Editor,"putString","(Ljava/lang/String;Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;");
-			jmPutFloat=env->GetMethodID(jcSharedPreferences_Editor,"putFloat","(Ljava/lang/String;F)Landroid/content/SharedPreferences$Editor;");
-			jmPutLong = env->GetMethodID(jcSharedPreferences_Editor, "putFloat", "(Ljava/lang/String;J)Landroid/content/SharedPreferences$Editor;");
-			jmCommit=env->GetMethodID(jcSharedPreferences_Editor,"commit","()Z");
+			jmPutBoolean = env->GetMethodID(jcSharedPreferences_Editor, "putBoolean", "(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;");
+			jmPutInt = env->GetMethodID(jcSharedPreferences_Editor, "putInt", "(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;");
+			jmPutString = env->GetMethodID(jcSharedPreferences_Editor, "putString", "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;");
+			jmPutFloat = env->GetMethodID(jcSharedPreferences_Editor, "putFloat", "(Ljava/lang/String;F)Landroid/content/SharedPreferences$Editor;");
+			jmPutLong = env->GetMethodID(jcSharedPreferences_Editor, "putLong", "(Ljava/lang/String;J)Landroid/content/SharedPreferences$Editor;");
+			jmCommit = env->GetMethodID(jcSharedPreferences_Editor, "commit", "()Z");
 		}
 		//return itself for method chaining
-		const SharedPreferences_Editor& putBoolean(const char* key,const bool value)const{
-			env->CallObjectMethod(joSharedPreferences_Edit,jmPutBoolean,env->NewStringUTF(key),(jboolean)value);
+		const SharedPreferences_Editor& putBoolean(const char* key, const bool value)const {
+			env->CallObjectMethod(joSharedPreferences_Edit, jmPutBoolean, env->NewStringUTF(key), (jboolean)value);
 			return *this;
 		}
-		const SharedPreferences_Editor& putInt(const char* key,const int value)const{
-			env->CallObjectMethod(joSharedPreferences_Edit,jmPutInt,env->NewStringUTF(key),(jint)value);
+		const SharedPreferences_Editor& putInt(const char* key, const int value)const {
+			env->CallObjectMethod(joSharedPreferences_Edit, jmPutInt, env->NewStringUTF(key), (jint)value);
 			return *this;
 		}
-		const SharedPreferences_Editor& putString(const char* key,const char* value)const{
-			env->CallObjectMethod(joSharedPreferences_Edit,jmPutString,env->NewStringUTF(key),env->NewStringUTF(value));
+		const SharedPreferences_Editor& putString(const char* key, const char* value)const {
+			env->CallObjectMethod(joSharedPreferences_Edit, jmPutString, env->NewStringUTF(key), env->NewStringUTF(value));
 			return *this;
 		}
 		const SharedPreferences_Editor& putLong(const char* key, float value)const {
@@ -67,8 +67,8 @@ namespace ani {
 			env->CallObjectMethod(joSharedPreferences_Edit, jmPutString, env->NewStringUTF(key), (jfloat)value);
 			return *this;
 		}
-		bool commit()const{
-			return (bool)env->CallBooleanMethod(joSharedPreferences_Edit,jmCommit);
+		bool commit()const {
+			return (bool)env->CallBooleanMethod(joSharedPreferences_Edit, jmCommit);
 		}
 	private:
 		JNIEnv* env;
@@ -84,40 +84,40 @@ namespace ani {
 
 	class SharedPreferences {
 	public:
-		SharedPreferences(SharedPreferences const &) = delete;
-		void operator=(SharedPreferences const &)= delete;
+		SharedPreferences(SharedPreferences const&) = delete;
+		void operator=(SharedPreferences const&) = delete;
 	public:
 		//Note: Per default, this doesn't keep the reference to the sharedPreferences java object alive
 		//longer than the lifetime of the JNIEnv.
 		//With keepReference=true the joSharedPreferences is kept 'alive' and you can still use the class after the original JNIEnv* has become invalid -
 		//but make sure to refresh the JNIEnv* object with a new valid reference via replaceJNI()
-		SharedPreferences(JNIEnv *env, jobject activity_clazz,const char* name,const bool keepReference=false){
-			this->env=env;
+		SharedPreferences(JNIEnv* env, jobject activity_clazz, const char* name, const bool keepReference = false) {
+			this->env = env;
 			//Find the 2 java classes we need to make calls with
 			jclass jcContext = env->FindClass("android/content/Context");
 			jclass jcSharedPreferences = env->FindClass("android/content/SharedPreferences");
 			//jclass jcSharedPreferences_Editor=env->FindClass("android/content/SharedPreferences$Editor");
-			if(jcContext==nullptr || jcSharedPreferences== nullptr){
-				__android_log_print(ANDROID_LOG_DEBUG, "SharedPreferences","Cannot find classes");
+			if (jcContext == nullptr || jcSharedPreferences == nullptr) {
+				__android_log_print(ANDROID_LOG_DEBUG, "SharedPreferences", "Cannot find classes");
 			}
 			//find the 3 functions we need to get values from an SharedPreferences instance
-			jmGetBoolean=env->GetMethodID(jcSharedPreferences,"getBoolean","(Ljava/lang/String;Z)Z");
-			jmGetInt=env->GetMethodID(jcSharedPreferences,"getInt","(Ljava/lang/String;I)I");
-			jmGetLong = env->GetMethodID(jcSharedPreferences, "getInt", "(Ljava/lang/String;J)J");
-			jmGetFloat=env->GetMethodID(jcSharedPreferences,"getFloat","(Ljava/lang/String;F)F");
-			jmGetString=env->GetMethodID(jcSharedPreferences,"getString","(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+			jmGetBoolean = env->GetMethodID(jcSharedPreferences, "getBoolean", "(Ljava/lang/String;Z)Z");
+			jmGetInt = env->GetMethodID(jcSharedPreferences, "getInt", "(Ljava/lang/String;I)I");
+			jmGetLong = env->GetMethodID(jcSharedPreferences, "getLong", "(Ljava/lang/String;J)J");
+			jmGetFloat = env->GetMethodID(jcSharedPreferences, "getFloat", "(Ljava/lang/String;F)F");
+			jmGetString = env->GetMethodID(jcSharedPreferences, "getString", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
 			//find the 1 function we need to create the SharedPreferences.Editor object
-			jmEdit=env->GetMethodID(jcSharedPreferences,"edit", "()Landroid/content/SharedPreferences$Editor;");
+			jmEdit = env->GetMethodID(jcSharedPreferences, "edit", "()Landroid/content/SharedPreferences$Editor;");
 			//create a instance of SharedPreferences and store it in @joSharedPreferences
-			jmethodID jmGetSharedPreferences=env->GetMethodID(jcContext,"getSharedPreferences","(Ljava/lang/String;I)Landroid/content/SharedPreferences;");
-			joSharedPreferences=env->CallObjectMethod(activity_clazz,jmGetSharedPreferences,env->NewStringUTF(name),MODE_PRIVATE);
+			jmethodID jmGetSharedPreferences = env->GetMethodID(jcContext, "getSharedPreferences", "(Ljava/lang/String;I)Landroid/content/SharedPreferences;");
+			joSharedPreferences = env->CallObjectMethod(activity_clazz, jmGetSharedPreferences, env->NewStringUTF(name), MODE_PRIVATE);
 			//jmEdit_commit=env->GetMethodID(jcSharedPreferences_Editor,"putString","(Ljava/lang/String;Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;");
-			if(keepReference){
-				joSharedPreferences=env->NewWeakGlobalRef(joSharedPreferences);
+			if (keepReference) {
+				joSharedPreferences = env->NewWeakGlobalRef(joSharedPreferences);
 			}
 		}
-		void replaceJNI(JNIEnv* newEnv){
-			env=newEnv;
+		void replaceJNI(JNIEnv* newEnv) {
+			env = newEnv;
 		}
 	private:
 		JNIEnv* env;
@@ -129,23 +129,23 @@ namespace ani {
 		jmethodID jmGetString;
 		jmethodID jmEdit;
 	public:
-		bool getBoolean(const char* id,bool defaultValue=false)const{
-			return (bool)(env->CallBooleanMethod(joSharedPreferences,jmGetBoolean,env->NewStringUTF(id),(jboolean)defaultValue));
+		bool getBoolean(const char* id, bool defaultValue = false)const {
+			return (bool)(env->CallBooleanMethod(joSharedPreferences, jmGetBoolean, env->NewStringUTF(id), (jboolean)defaultValue));
 		}
-		int getInt(const char* id,int defaultValue=0)const{
-			return (int)(env->CallIntMethod(joSharedPreferences,jmGetInt,env->NewStringUTF(id),(jint)defaultValue));
+		int getInt(const char* id, int defaultValue = 0)const {
+			return (int)(env->CallIntMethod(joSharedPreferences, jmGetInt, env->NewStringUTF(id), (jint)defaultValue));
 		}
-		float getFloat(const char* id,float defaultValue=0.0f)const{
-			return (float)(env->CallFloatMethod(joSharedPreferences,jmGetFloat,env->NewStringUTF(id),(jfloat)defaultValue));
+		float getFloat(const char* id, float defaultValue = 0.0f)const {
+			return (float)(env->CallFloatMethod(joSharedPreferences, jmGetFloat, env->NewStringUTF(id), (jfloat)defaultValue));
 		}
 		long getLong(const char* id, long defaultValue = 0)const {
 			return (long)(env->CallFloatMethod(joSharedPreferences, jmGetLong, env->NewStringUTF(id), (jlong)defaultValue));
 		}
-		std::string getString(const char* id,const char* defaultValue="")const{
-			auto value=(jstring)(env->CallObjectMethod(joSharedPreferences,jmGetString,env->NewStringUTF(id),env->NewStringUTF(defaultValue)));
+		std::string getString(const char* id, const char* defaultValue = "")const {
+			auto value = (jstring)(env->CallObjectMethod(joSharedPreferences, jmGetString, env->NewStringUTF(id), env->NewStringUTF(defaultValue)));
 			const char* valueP = env->GetStringUTFChars(value, nullptr);
-			const std::string ret=std::string(valueP);
-			env->ReleaseStringUTFChars(value,valueP);
+			const std::string ret = std::string(valueP);
+			env->ReleaseStringUTFChars(value, valueP);
 			//__android_log_print(ANDROID_LOG_DEBUG, "SharedPreferences","%s",ret.c_str());
 			return ret;
 		}
@@ -169,10 +169,10 @@ namespace ani {
 			//__android_log_print(ANDROID_LOG_DEBUG, "SharedPreferences","%s",ret.c_str());
 			*out = ret;
 		}
-		SharedPreferences_Editor edit()const{
+		SharedPreferences_Editor edit()const {
 			//create a instance of SharedPreferences.Editor and store it in @joSharedPreferences_Edit
-			jobject joSharedPreferences_Edit=env->CallObjectMethod(joSharedPreferences,jmEdit);
-			SharedPreferences_Editor editor(env,joSharedPreferences_Edit);
+			jobject joSharedPreferences_Edit = env->CallObjectMethod(joSharedPreferences, jmEdit);
+			SharedPreferences_Editor editor(env, joSharedPreferences_Edit);
 			return editor;
 		}
 	private:
@@ -247,7 +247,7 @@ namespace ani {
 				curlRequest.setOpt(wf);
 				curlRequest.setOpt(curlpp::options::Url(url));
 				curlRequest.perform();
-				*response= __curl_request_data;
+				*response = __curl_request_data;
 			}
 			catch (curlpp::LibcurlRuntimeError e) {
 				*response = std::string(e.what()) + "| Curl returned : " + curl_easy_strerror(e.whatCode());
@@ -291,8 +291,8 @@ namespace ani {
 			sendPostRequestDataImpl__(url, body, &out, headers);
 			return out;
 		}
-	
-	
+
+
 	};
 	const char* __rootusb_class = "android.hardware.usb";
 	struct SystemService {
