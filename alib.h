@@ -44,6 +44,15 @@
 #define alib_malloca(TYPE, length) (TYPE*)malloc(length)
 #define alib_malloct(TYPE) (TYPE*)malloc(sizeof(TYPE))
 
+#define alib_max(a,b) (((a) > (b)) ? (a) : (b))
+#define alib_min(a,b) (((a) < (b)) ? (a) : (b))
+
+_ALIB_FQUAL void alib_reqlen(size_t* sz, char* arr) {
+    if ((*sz) == 0) {
+        (*sz) = strlen(arr);
+    }
+}
+
 #ifndef itoa
 _ALIB_FQUAL char* itoa(int num, char* buffer, int base) {
     int curr = 0;
@@ -169,3 +178,152 @@ _ALIB_FQUAL char* ftoa(float f)
 +	((unsigned long long int)B32(db5,db6,db7,dlsb)	   ) \
 )
 #endif // ALIB_NO_BINARY
+
+#if defined(ALIB_FORCE_CONCAT) || (!defined(ALIB_NO_CONCAT))
+
+#define __concat_internal3(a, b, c) a##b##c
+#define __concat_internal2(a, b) a##b
+#define __concat4__internal(a,b,c,d) __concat_internal2(a,b)##__concat_internal2(c,d)
+#define concat4(a,b,c,d) __concat4__internal(a,b,c,d)
+#define concat3(a, b, c) __concat_internal3(a, b, c)
+#define concat2(a, b) __concat_internal2(a, b)
+#endif // ALIB_NO_CONCAT
+
+
+// Note: ignore any "function definition for typedef_func_ty" or "Y is not defined" errors. They're temporary.
+#define d_typedef_func_ty(return_z, name, ...) typedef return_z (*name)(__VA_ARGS__);
+
+
+
+#if defined(ALIB_FORCE_NONAMES) || (!defined(ALIB_NO_NONAMES))
+// This may require some explaining. I use these for creating pseudo unnamed functions and variables, at compile time.
+// Obviously, since they're unnamed, they're single use. Unless you reverse the noname function via _nng(line with _nn)
+// What it should output is obviously based upon compiler, but what it'll look like on GCC is roughly this:
+// ____34_unl__noname_line_34_LINEPOS_34_un_
+#define ___nn_internal_concat__(a, b, c) a##b##c
+#define ___nn_internal_concat(a, b, c) ___nn_internal_concat__(a, b, c)
+#define _s_nn_internal__(a) ___nn_internal_concat(a, _LINEPOS_, __LINE__)
+#define _s_nn_internal__2__ _s_nn_internal__(___nn_internal_concat(_noname, _line_, __LINE__))
+#define _s_nn_internal__2_1_ ___nn_internal_concat(_, ___nn_internal_concat(__, __LINE__, _unl), _)
+#define _s_nn_internal__3__ ___nn_internal_concat(_s_nn_internal__2_1_, _s_nn_internal__2__, _un)
+
+#define _g_nn_internal__(a, line) ___nn_internal_concat(a, _LINEPOS_, line)
+#define _g_nn_internal__2__(line) _g_nn_internal__(___nn_internal_concat(_noname, _line_, line), line)
+#define _g_nn_internal__2_1_(line) ___nn_internal_concat(_, ___nn_internal_concat(__, line, _unl), _)
+#define _g_nn_internal__3__(line) ___nn_internal_concat(_g_nn_internal__2_1_(line), _g_nn_internal__2__(line), _un)
+
+#define _nn_impl ___nn_internal_concat(_, _s_nn_internal__3__, _) // Create no-name object
+#define _nn _nn_impl
+#define _nng(line) ___nn_internal_concat(_, _g_nn_internal__3__(line), _) // Get no-name object at file line (LINE)
+
+#endif // ALIB_NO_NONAMES
+_ALIB_FQUAL int alib_log(int base, int n) {
+#ifndef _CMATH_
+    // 75% as fast as cmath, if using recursion. If we have cmath avalible, use that instead.
+    return (n > base - 1)
+        ? 1 + alib_log(n / base, base)
+        : 0;
+#else
+    return (int)(log(n) / log(base));
+#endif
+}
+_ALIB_FQUAL long alib_abs(signed long val) {
+	if (val < 0) {val *= -1;}
+	return val;
+}
+_ALIB_FQUAL bool alib_wrange(int min, int max, int val) {
+    return ((val - max) * (val - min) <= 0);
+}
+// Taken from python's usage of math.isclose()
+_ALIB_FQUAL bool alib_fclose(float first, float second, float rel_tol = 1e-09, float abs_tol = 0.0) {
+    return alib_abs(first - second) <= alib_max(rel_tol * alib_max(alib_abs(first), alib_abs(second)), abs_tol);
+}
+_ALIB_FQUAL bool alib_dclose(double first, double second, double rel_tol = 1e-09, double abs_tol = 0.0) {
+    return alib_abs(first - second) <= alib_max(rel_tol * alib_max(alib_abs(first), alib_abs(second)), abs_tol);
+}
+_ALIB_FQUAL int alib_endswith(const char* str, const char* suffix)
+{
+    if (!str || !suffix)
+        return 0;
+    size_t lenstr = strlen(str);
+    size_t lensuffix = strlen(suffix);
+    if (lensuffix > lenstr)
+        return 0;
+    return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
+}
+
+_ALIB_FQUAL int alib_beginswith(const char* str, const char* prefix)
+{
+    if (!str || !prefix)
+        return 0;
+    size_t lenstr = strlen(str);
+    size_t lenprefix = strlen(prefix);
+    if (lenprefix > lenstr)
+        return 0;
+    return strncmp(str, prefix, lenprefix) == 0;
+}
+
+_ALIB_FQUAL int alib_chreq(const char* src, const char* match) {
+    size_t sl = strlen(src);
+    size_t ml = strlen(match);
+    if (ml > sl) { return false; }
+    return strncmp(src, match, ml);
+}
+// Occurances of char `c` in `src`
+_ALIB_FQUAL size_t alib_chrocc(const char* src, char c, size_t len = 0) {
+    alib_reqlen(&len, src);
+    size_t occ = 0;
+    for (size_t i = 0; i < len; i++) {
+        if (src[i] == c) { occ++; }
+    }
+    return occ;
+}
+// get byte at offset of array 
+_ALIB_FQUAL char alib_get_byte(void* data, int offset) {
+    return ((char*)data)[offset];
+}
+// get byte at array[0]
+_ALIB_FQUAL char alib_get_byte(void* data) {
+    return ((char*)data)[0];
+}
+// set byte at offset of array 
+_ALIB_FQUAL void alib_set_byte(void* data, char byte, int offset) {
+    reinterpret_cast<char*>(data)[offset] = byte;
+}
+// set byte at array[0]
+_ALIB_FQUAL void alib_set_byte(void* data, char byte) {
+    reinterpret_cast<char*>(data)[0] = byte;
+}
+#ifdef __GNUC__
+#define VSCPRINTF "implemented"
+_ALIB_FQUAL int vscprintf(const char* format, va_list ap)
+{
+    va_list ap_copy;
+    va_copy(ap_copy, ap);
+    int retval = vsnprintf(NULL, 0, format, ap_copy);
+    va_end(ap_copy);
+    return retval;
+}
+#endif
+_ALIB_FQUAL size_t alib_2d_ar_pos(size_t pitch, size_t x, size_t y, size_t bytes_per_step = 4) {
+    return y * pitch + x * bytes_per_step;
+}
+_ALIB_FQUAL const char* alib_chrrepl(const char* in, char match, char repl_value) {
+    while (*(in++)) {
+        if (*in == match) {
+            (*(char*)in) = repl_value;
+        }
+    }
+    return in;
+}
+_ALIB_FQUAL void alib_copy_signed(signed int a, signed int* b) {
+    *b = (a < 0) ? -*b : (*b < 0) ? -*b : *b;
+}
+_ALIB_FQUAL double alib_percent(long double num, double percent) {
+    long double _n_d100 = (num / 100);
+    return lroundl(_n_d100 * percent);
+}
+_ALIB_FQUAL float alib_percentf(float num, float percent) {
+    float _n_d100 = (num * 0.01);
+    return lroundf(_n_d100 * percent);
+}
