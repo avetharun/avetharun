@@ -47,9 +47,14 @@
       // Original impl: https://github.com/avetharun/avetharun/blob/bf49a022c7021fb3200231722f7975f167e1cf9f/ave_libs.hpp#L308
                        // Also added assert handling
 #include <string>
+#define _ALIB_FQUAL static inline
 std::string ___nn_alib_error_charp_str;
+_ALIB_FQUAL char* alib_strfmt(const char* fmt, ...);
 #define alib_get_error() ___nn_alib_error_charp_str.c_str()
 #define alib_set_error(...) ___nn_alib_error_charp_str = alib_strfmt(__VA_ARGS__);
+
+// Note: ignore any "function definition for typedef_func_ty" or "Y is not defined" errors. They're temporary.
+#define d_typedef_func_ty(return_z, name, ...) typedef return_z (*name)(__VA_ARGS__);
 
 #ifndef itoa
 char* itoa(int num, char* buffer, int base) {
@@ -116,7 +121,6 @@ char* ftoa(float f)
     return buf;
 }
 #endif
-#define _ALIB_FQUAL static inline
 #ifndef NDEBUG
 // Production builds should set NDEBUG=1
 #define NDEBUG false
@@ -254,79 +258,6 @@ _ALIB_FQUAL void __alib_internal_reqlen__f_impl(size_t* sz, const char* arr) {
         (*sz) = strlen(arr);
     }
 }
-/* We want POSIX.1-2008 + XSI, i.e. SuSv4, features */
-#define _XOPEN_SOURCE 700
-
-/* Added on 2017-06-25:
-   If the C library can support 64-bit file sizes
-   and offsets, using the standard names,
-   these defines tell the C library to do so. */
-#define _LARGEFILE64_SOURCE
-#define _FILE_OFFSET_BITS 64 
-
-#include <stdlib.h>
-#include <unistd.h>
-#include <ftw.h>
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <dirent.h>
-
-   /* POSIX.1 says each process has at least 20 file descriptors.
-    * Three of those belong to the standard streams.
-    * Here, we use a conservative estimate of 15 available;
-    * assuming we use at most two for other uses in this program,
-    * we should never run into any problems.
-    * Most trees are shallower than that, so it is efficient.
-    * Deeper trees are traversed fine, just a bit slower.
-    * (Linux allows typically hundreds to thousands of open files,
-    *  so you'll probably never see any issues even if you used
-    *  a much higher value, say a couple of hundred, but
-    *  15 is a safe, reasonable value.)
-   */
-#ifndef USE_FDS
-#define USE_FDS 15
-#endif
-
-
-_ALIB_FQUAL const char* __alib_strfmt_file(const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    size_t bufsz = 0;
-    bufsz = snprintf(NULL, 0, fmt, args);
-    const char* _buf = (const char*)malloc(bufsz);
-    vsprintf((char*)_buf, fmt, args);
-    va_end(args);
-    return _buf;
-}
-_ALIB_FQUAL std::string alib_file_tree(std::string dirpath, int indent = 1)
-{
-        DIR* dir;
-        struct dirent* entry;
-        std::string __dirpath_cur = dirpath;
-        std::stringstream _s_out(dirpath + "\n");
-        __step:
-        if (!(dir = opendir(__dirpath_cur.c_str())))
-            return dirpath;
-
-        while ((entry = readdir(dir)) != NULL) {
-            if (entry->d_type == DT_DIR) {
-                char path[PATH_MAX];
-                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                    continue;
-                snprintf(path, PATH_MAX, "%s/%s", __dirpath_cur.c_str(), entry->d_name);
-                _s_out << __alib_strfmt_file("%*s[%s]\n", indent, "", entry->d_name);
-                goto __step;
-            }
-            else {
-                printf("%*s- %s\n", indent, "", entry->d_name);
-            }
-        }
-        closedir(dir);
-        return _s_out.str();
-}
-
 
 _ALIB_FQUAL std::string alib_file_read(std::ifstream& file) {
     std::ostringstream buf;
@@ -406,8 +337,6 @@ _ALIB_FQUAL char* alib_gcwd() {
 #endif // ALIB_NO_CONCAT
 
 
-// Note: ignore any "function definition for typedef_func_ty" or "Y is not defined" errors. They're temporary.
-#define d_typedef_func_ty(return_z, name, ...) typedef return_z (*name)(__VA_ARGS__);
 
 
 
@@ -598,7 +527,7 @@ _ALIB_FQUAL char* alib_getDigitsOfNumber(int num, bool ascii = true) {
     {
         // What even is math?
         const int least_significant_digit = num % 10;
-        digits[i] = (least_significant_digit + ( (ascii) ? 48 : 0));
+        digits[i] = (least_significant_digit + ((ascii) ? 48 : 0));
         num /= 10;
         i++;
     }
@@ -646,6 +575,23 @@ _ALIB_FQUAL int alib_beginswith(const char* str, const char* prefix)
         return 0;
     return strncmp(str, prefix, lenprefix) == 0;
 }
+// Get string between two strings
+_ALIB_FQUAL int alib_substr2(const char* input, size_t input_len) {
+
+}
+// if string begins with X and the character afterward is NOT the last character of the prefix.
+_ALIB_FQUAL int alib_beginswith_anddoesntfollow(const char* str, const char* prefix)
+{
+    if (!str || !prefix)
+        return 0;
+    size_t lenstr = strlen(str);
+    size_t lenprefix = strlen(prefix);
+    if (lenprefix > lenstr)
+        return 0;
+    // No character after
+    if (lenstr < lenprefix + 1) { return strncmp(str, prefix, lenprefix) == 0; }
+    return strncmp(str, prefix, lenprefix) == 0 && str[lenprefix] != prefix[lenprefix - 1];
+}
 // get position of char 
 _ALIB_FQUAL int alib_getchrpos(const char* src, char c, size_t len = 0)
 {
@@ -686,6 +632,7 @@ _ALIB_FQUAL size_t alib_chrocc(const char* src, char c, size_t len = 0) {
     return occ;
 }
 #include <vector>
+#include <cstdarg>
 _ALIB_FQUAL const char* alib_rmocc(const char* src, char c, size_t len = 0) {
     alib_reqlen(&len, src);
     std::vector<char> src_copy;
@@ -824,15 +771,28 @@ _ALIB_FQUAL const char* alib_strfmtv(const char* fmt, va_list args) {
     vsprintf((char*)_buf, fmt, args);
     return _buf;
 }
-_ALIB_FQUAL const char* alib_strfmt(const char* fmt, ...) {
+_ALIB_FQUAL char* alib_strfmt(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     size_t bufsz = 0;
     bufsz = snprintf(NULL, 0, fmt, args);
-    const char* _buf = (const char*)malloc(bufsz);
-    vsprintf((char*)_buf, fmt, args);
+    char* _buf = (char*)malloc(bufsz);
+    vsprintf(_buf, fmt, args);
     va_end(args);
     return _buf;
+}
+_ALIB_FQUAL std::string alib_strfmts(const char* fmt, ...) {
+    va_list args;
+    std::string out;
+    va_start(args, fmt);
+    size_t bufsz = 0;
+    bufsz = snprintf(NULL, 0, fmt, args);
+    char* _buf = alib_malloca(char, bufsz);
+    vsprintf(_buf, fmt, args);
+    out.append(_buf);
+    free(_buf);
+    va_end(args);
+    return out;
 }
 _ALIB_FQUAL const char* alib_chrrepl(const char* in, char match, char repl_value) {
     while (*(in++)) {
@@ -845,47 +805,7 @@ _ALIB_FQUAL const char* alib_chrrepl(const char* in, char match, char repl_value
 // Unlike the character replacement version, this will be re-allocating on the stack if needed
 // Array will be trimmed after, make sure to free() it!
 _ALIB_FQUAL char* alib_strrepl(char* in, const char* match, const char* repl, size_t in_len = 0, size_t match_len = 0, size_t repl_len = 0) {
-    return "NTIMPL\0"; // NTIMPL
-    alib_reqlen(&in_len, in);
-    alib_reqlen(&match_len, match);
-    alib_reqlen(&repl_len, repl);
-
-    // amount of characters we have to work with
-    // Assumes we can fit the replacements in in_len * 8.. 
-    // which should be the case unless you're doing something weird.
-    // If that's so, we will create a new one and copy it to the new one.
-    // Array to store offsets of instances of the matches
-    std::vector<size_t> __elems;
-    size_t in_off = 0;
-    size_t result_len = 0;
-    size_t _instance_last_length = 0;
-    for (int i = 0; i < in_len; i++, in_off++) {
-        // Find instances of string matches
-        if (strncmp(in + i, match, match_len) == 0) {
-            __elems.push_back(in_off);
-        };
-    }
-    in -= in_off;
-
-
-    size_t amtww = in_len + (repl_len * __elems.size()) + 1;
-    size_t elemof = 0;
-    char* tmp = alib_malloca(char, amtww);
-
-    for (int i = 0; i < __elems.size(); i++) {
-        
-    }
-
-
-
-    char* result = alib_malloca(char, result_len + 1);
-    strncpy(result, tmp, result_len);
-    result[result_len] = '\0';
-
-    free(in);
-    free(tmp);
-    in = result;
-    return in;
+    return (char*)"NTIMPL\0"; // NTIMPL
 }
 // Copies the sign-ed ness of A into B
 _ALIB_FQUAL void alib_copy_signed(signed int a, signed int* b) {
@@ -893,9 +813,9 @@ _ALIB_FQUAL void alib_copy_signed(signed int a, signed int* b) {
 }
 template <typename T>
 _ALIB_FQUAL void alib_clampptr(T* out, T lower, T upper) {
-    *out = 
-        (* out <= lower) ? lower : // out <= lower : return lower
-        (*out <= upper)  ? *out :  // out <= upper : return out
+    *out =
+        (*out <= lower) ? lower : // out <= lower : return lower
+        (*out <= upper) ? *out :  // out <= upper : return out
         upper;                     // out >  upper : return upper
 }
 template <typename T>
@@ -1159,7 +1079,7 @@ _ALIB_FQUAL FILE* android_fopen(const char* fname, AAssetManager* _mgr) {
 //
 // nlohmann/json utilities
 //
-#if defined(ALIB_JSON_NLOHHMAN) && (!defined(alib_json_utilities__included_))
+#if defined(INCLUDE_NLOHMANN_JSON_HPP_) && (!defined(alib_json_utilities__included_))
 #define alib_json_utilities__included_
 // nlohhman/json included, or alib_force_json defined use these utilities
 
