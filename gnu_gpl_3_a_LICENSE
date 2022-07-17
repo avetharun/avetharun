@@ -1,4 +1,3 @@
-
 Copyright HOLDER YEAR - GNU-GPL3-a (https://github.com/avetharun/avetharun/blob/main/gnu_gpl_3_a_LICENSE)
     You can:
         - Use this commercially
@@ -8,7 +7,7 @@ Copyright HOLDER YEAR - GNU-GPL3-a (https://github.com/avetharun/avetharun/blob/
         - Use this file and/or project privately, ie. for use in an internal server (See limitations & Exceptions)
         - Use freely under the following conditions
     Conditions:
-        - The user (you) are not liable for the harmful actions this program or file may cause, if any.
+        - The user (you) are liable for the harmful actions this program or file may cause, if any.
         - You must disclose the source file and/or author when distributing this file or project using this license
         - A copy of this license must be attached to the file, in verbatim
         - The same (or similar) license must be used if you modify and license your version of this project or file
@@ -21,5 +20,5 @@ Copyright HOLDER YEAR - GNU-GPL3-a (https://github.com/avetharun/avetharun/blob/
         - Keep code closed source (*See exceptions)
     Exceptions
         - If code is closed source, it must be in a private setting. Examples are as follows:
-        EXA: A server used to host and/or distribute files
-        EXB: Used as a base for porting and/or in microcontrollers
+            EXA: A server used to host and/or distribute files
+            EXB: Used as a base for porting and/or in microcontrollers
