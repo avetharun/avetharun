@@ -47,17 +47,115 @@
       // Original impl: https://github.com/avetharun/avetharun/blob/bf49a022c7021fb3200231722f7975f167e1cf9f/ave_libs.hpp#L308
                        // Also added assert handling
 #include <string>
+#include <assert.h>
+#include <stdarg.h>
 #define _ALIB_FQUAL static inline
 std::string ___nn_alib_error_charp_str;
 _ALIB_FQUAL char* alib_strfmt(const char* fmt, ...);
 #define alib_get_error() ___nn_alib_error_charp_str.c_str()
 #define alib_set_error(...) ___nn_alib_error_charp_str = alib_strfmt(__VA_ARGS__);
 
+#define alib_rad2deg M_PI / 180
+#define alib_deg2rad M_PI * 180
+#define alib_1rad 180 / M_PI
+
+
+
 // Note: ignore any "function definition for typedef_func_ty" or "Y is not defined" errors. They're temporary.
 #define d_typedef_func_ty(return_z, name, ...) typedef return_z (*name)(__VA_ARGS__);
+// Copy of ImGui's IMVector class, slimmed to fit the need of this library.
+// Only 255 stack objects can be pushed at once. This is because THIS ISNT A REPLACEMENT OF STD::STACK
 
-#ifndef itoa
-char* itoa(int num, char* buffer, int base) {
+template<typename T>
+struct ALStack
+{
+    int                 Size;
+    int                 Capacity;
+    T* Data;
+
+    // Provide standard typedefs but we don't use them ourselves.
+    typedef T                   value_type;
+    typedef value_type* iterator;
+    typedef const value_type* const_iterator;
+
+    // Constructors, destructor
+    inline ALStack() { Size = Capacity = 0; Data = NULL; }
+    inline ALStack(const ALStack<T>& src) { Size = Capacity = 0; Data = NULL; operator=(src); }
+    inline ALStack<T>& operator=(const ALStack<T>& src) { clear(); resize(src.Size); memcpy(Data, src.Data, (size_t)Size * sizeof(T)); return *this; }
+    inline ~ALStack() { if (Data) free(Data); } // Important: does not destruct anything
+
+    inline void         clear() { if (Data) { Size = Capacity = 0; free(Data); Data = NULL; } }  // Important: does not destruct anything
+    inline void         clear_delete() { for (int n = 0; n < Size; n++) Data[n].~T(); clear(); }     // Important: never called automatically! always explicit.
+    inline void         clear_destruct() { for (int n = 0; n < Size; n++) Data[n].~T(); clear(); }           // Important: never called automatically! always explicit.
+
+    inline bool         empty() const { return Size == 0; }
+    inline int          size() const { return Size; }
+    inline int          size_in_bytes() const { return Size * (int)sizeof(T); }
+    inline int          max_size() const { return 0xff / (int)sizeof(T); }
+    inline int          capacity() const { return Capacity; }
+
+    inline T* begin() { return Data; }
+    inline const T* begin() const { return Data; }
+    inline T* end() { return Data + Size; }
+    inline const T* end() const { return Data + Size; }
+    inline T& front() { assert(Size > 0); return Data[0]; }
+    inline const T& front() const { assert(Size > 0); return Data[0]; }
+    inline T& back() { assert(Size > 0); return Data[Size - 1]; }
+    inline T& top() { return back(); }
+    inline const T& back() const { assert(Size > 0); return Data[Size - 1]; }
+    inline const T& top() const { return back(); }
+    inline T& at(int amt) { assert(amt < Size); return Data + amt; }
+    inline void         swap(ALStack<T>& rhs) { int rhs_size = rhs.Size; rhs.Size = Size; Size = rhs_size; int rhs_cap = rhs.Capacity; rhs.Capacity = Capacity; Capacity = rhs_cap; T* rhs_data = rhs.Data; rhs.Data = Data; Data = rhs_data; }
+    inline T* insert(const T* it, const T& v) { assert(it >= Data && it <= Data + Size); const ptrdiff_t off = it - Data; if (Size == Capacity) reserve(_grow_capacity(Size + 1)); if (off < (int)Size) memmove(Data + off + 1, Data + off, ((size_t)Size - (size_t)off) * sizeof(T)); memcpy(&Data[off], &v, sizeof(v)); Size++; return Data + off; }
+    inline bool         contains(const T& v) const { const T* data = Data;  const T* data_end = Data + Size; while (data < data_end) if (*data++ == v) return true; return false; }
+
+    inline int          _grow_capacity(int sz) const { int new_capacity = Capacity ? (Capacity + Capacity / 2) : 8; return new_capacity > sz ? new_capacity : sz; }
+    inline void         resize(int new_size) { if (new_size > Capacity) reserve(_grow_capacity(new_size)); Size = new_size; }
+    inline void         resize(int new_size, const T& v) { if (new_size > Capacity) reserve(_grow_capacity(new_size)); if (new_size > Size) for (int n = Size; n < new_size; n++) memcpy(&Data[n], &v, sizeof(v)); Size = new_size; }
+    inline void         shrink(int new_size) { assert(new_size <= Size); Size = new_size; } // Resize a vector to a smaller size, guaranteed not to cause a reallocation
+    inline void         reserve(int new_capacity) { if (new_capacity <= Capacity) return; T* new_data = (T*)malloc((size_t)new_capacity * sizeof(T)); if (Data) { memcpy(new_data, Data, (size_t)Size * sizeof(T)); free(Data); } Data = new_data; Capacity = new_capacity; }
+
+    // NB: It is illegal to call push_back/push_front/insert with a reference pointing inside the ImVector data itself! e.g. v.push_back(v[10]) is forbidden.
+    inline void         push_back(const T& v) { assert(Size == Capacity); reserve(_grow_capacity(Size + 1)); memcpy(&Data[Size], &v, sizeof(v)); Size++; }
+    inline void         pop_back() { assert(Size > 0); Size--; }
+    inline void         pop() { assert(Size > 0); Size--; }
+    inline void         push(const T& v) { if (Size == 0) push_back(v); else insert(Data, v); }
+    inline void         push_front(const T& v) { if (Size == 0) push_back(v); else insert(Data, v); }
+};
+#define AlibStack ALStack
+#define alib_stack ALStack
+#include <exception>
+#define alib_noerr(CODE_TO_RUN) \
+    try{\
+        CODE_TO_RUN;\
+    }catch(std::exception ignored){}
+
+#define M_E        2.71828182845904523536   // e
+#define M_LOG2E    1.44269504088896340736   // log2(e)
+#define M_LOG10E   0.434294481903251827651  // log10(e)
+#define M_LN2      0.693147180559945309417  // ln(2)
+#define M_LN10     2.30258509299404568402   // ln(10)
+#define M_PI       3.14159265358979323846   // pi
+#define M_PI_2     1.57079632679489661923   // pi/2
+#define M_PI_4     0.785398163397448309616  // pi/4
+#define M_1_PI     0.318309886183790671538  // 1/pi
+#define M_2_PI     0.636619772367581343076  // 2/pi
+#define M_2_SQRTPI 1.12837916709551257390   // 2/sqrt(pi)
+#define M_SQRT2    1.41421356237309504880   // sqrt(2)
+#define M_SQRT1_2  0.707106781186547524401  // 1/sqrt(2)
+bool alib_atob(const char* buffer) {
+    size_t l = strlen(buffer);
+    if (l >= 1) {
+        if (buffer[0] == 't' || buffer[0] == '1') {
+            return true;
+        }
+        if (buffer[0] == 'f' || buffer[0] == '0') {
+            return false;
+        }
+    }
+    return false;
+}
+char* alib_itoa(int num, char* buffer, int base) {
     int curr = 0;
 
     if (num == 0) {
@@ -102,9 +200,7 @@ char* itoa(int num, char* buffer, int base) {
     buffer[curr] = '\0';
     return buffer;
 }
-#endif
-#ifndef ftoa
-char* ftoa(float f)
+char* alib_ftoa(float f)
 {
     static char        buf[17];
     char* cp = buf;
@@ -120,7 +216,6 @@ char* ftoa(float f)
     sprintf(cp, "%lu.%6.6lu", l, rem);
     return buf;
 }
-#endif
 #ifndef NDEBUG
 // Production builds should set NDEBUG=1
 #define NDEBUG false
@@ -258,30 +353,51 @@ _ALIB_FQUAL void __alib_internal_reqlen__f_impl(size_t* sz, const char* arr) {
         (*sz) = strlen(arr);
     }
 }
+/* We want POSIX.1-2008 + XSI, i.e. SuSv4, features */
+#define _XOPEN_SOURCE 700
 
-_ALIB_FQUAL std::string alib_file_read(std::ifstream& file) {
-    std::ostringstream buf;
-    buf << file.rdbuf();
-    return buf.str();
-}
-_ALIB_FQUAL std::string alib_file_read(const char* fname) {
-    std::ostringstream buf;
-    std::ifstream file(fname, std::ios::binary);
-    buf << file.rdbuf();
-    return buf.str();
-}
+/* Added on 2017-06-25:
+   If the C library can support 64-bit file sizes
+   and offsets, using the standard names,
+   these defines tell the C library to do so. */
+#define _LARGEFILE64_SOURCE
+#define _FILE_OFFSET_BITS 64 
+
+#include <stdlib.h>
+#ifdef __linux__
+#include <unistd.h>
+#endif
+#include <time.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
+   /* POSIX.1 says each process has at least 20 file descriptors.
+    * Three of those belong to the standard streams.
+    * Here, we use a conservative estimate of 15 available;
+    * assuming we use at most two for other uses in this program,
+    * we should never run into any problems.
+    * Most trees are shallower than that, so it is efficient.
+    * Deeper trees are traversed fine, just a bit slower.
+    * (Linux allows typically hundreds to thousands of open files,
+    *  so you'll probably never see any issues even if you used
+    *  a much higher value, say a couple of hundred, but
+    *  15 is a safe, reasonable value.)
+   */
+#ifndef USE_FDS
+#define USE_FDS 15
+#endif
 
 
-_ALIB_FQUAL void alib_file_read(const char* fname, const char** out_, unsigned long long* size_) {
-    std::string _fr = alib_file_read(fname);
-    *out_ = _fr.c_str();
-    *size_ = _fr.size();
-}
-
-_ALIB_FQUAL void alib_file_read(std::ifstream file, const char** out_, unsigned long long* size_) {
-    std::string _fr = alib_file_read(file);
-    *out_ = _fr.c_str();
-    *size_ = _fr.size();
+_ALIB_FQUAL const char* __alib_strfmt_file(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    size_t bufsz = 0;
+    bufsz = snprintf(NULL, 0, fmt, args);
+    const char* _buf = (const char*)malloc(bufsz);
+    vsprintf((char*)_buf, fmt, args);
+    va_end(args);
+    return _buf;
 }
 
 _ALIB_FQUAL bool alib_file_exists(const char* name) {
@@ -292,6 +408,70 @@ _ALIB_FQUAL bool alib_file_exists(const char* name) {
     else {
         return false;
     }
+}
+
+_ALIB_FQUAL size_t alib_file_length(FILE* file, struct stat* file_stat) {
+    fstat(_fileno(file), file_stat);
+    size_t sz = file_stat->st_size;
+    return sz;
+}
+_ALIB_FQUAL size_t alib_file_length(FILE* file) {
+    struct stat file_stat;
+    fstat(_fileno(file), &file_stat);
+    size_t sz = file_stat.st_size;
+    return sz;
+}
+
+_ALIB_FQUAL size_t alib_file_length(const char* fname) {
+    if (!alib_file_exists(fname)) {
+        return 0;
+    }
+    FILE* file = fopen(fname, "rb");
+    size_t sz = alib_file_length(file);
+    fclose(file);
+    return sz;
+}
+
+_ALIB_FQUAL std::string alib_file_read(std::ifstream& file) {
+    std::ostringstream buf;
+    buf << file.rdbuf();
+    return buf.str();
+}
+_ALIB_FQUAL std::string alib_file_read(const char* fname) {
+    std::ostringstream buf;
+    std::ifstream file(fname, std::ios::binary);
+    buf << file.rdbuf();
+    file.close();
+    return buf.str();
+}
+
+
+_ALIB_FQUAL void alib_file_read(const char* fname, const char* out_, unsigned long long* size_) {
+    if (!alib_file_exists(fname)) {
+        return;
+    }
+    FILE* file = fopen(fname, "rb");
+    struct stat file_stat;
+    size_t len = alib_file_length(file, &file_stat);
+    *size_ = len;
+    if (!out_) {
+        out_ = alib_malloca(char, len);
+    }
+    fread((void*)out_, len, 1, file);
+    fclose(file);
+}
+_ALIB_FQUAL void alib_file_read(const char* fname, const char* out_, unsigned long long size_) {
+    if (!alib_file_exists(fname)) {
+        return;
+    }
+    FILE* file = fopen(fname, "rb");
+    struct stat file_stat;
+    size_t len = alib_file_length(file, &file_stat);
+    if (!out_) {
+        out_ = alib_malloca(char, len);
+    }
+    fread((void*)out_, len, 1, file);
+    fclose(file);
 }
 
 _ALIB_FQUAL void alib_file_write(const char* filen, const char* d, size_t l = 0) {
@@ -461,12 +641,8 @@ _ALIB_FQUAL size_t alib_nulposn(const char* arr, int limit) {
 template <typename T>
 _ALIB_FQUAL T alib_max(T first, T second) {
 
-#ifndef _CMATH_
     if (first < second) { return second; }
     return first;
-#else 
-    return max(first, second);
-#endif
 }
 template <typename T>
 _ALIB_FQUAL T alib_min(T first, T second) {
@@ -494,11 +670,16 @@ _ALIB_FQUAL bool alib_wrange(int min, int max, int val) {
     return ((val - max) * (val - min) <= 0);
 }
 // Taken from python's usage of math.isclose()
-_ALIB_FQUAL bool alib_fclose(float first, float second, float rel_tol = 1e-09, float abs_tol = 0.0) {
+_ALIB_FQUAL bool alib_fisclose(float first, float second, float rel_tol = 1e-09, float abs_tol = 0.0) {
     return abs(first - second) <= alib_max(rel_tol * alib_max(abs(first), abs(second)), abs_tol);
 }
-_ALIB_FQUAL bool alib_dclose(double first, double second, double rel_tol = 1e-09, double abs_tol = 0.0) {
+_ALIB_FQUAL bool alib_disclose(double first, double second, double rel_tol = 1e-09, double abs_tol = 0.0) {
     return abs(first - second) <= alib_max(rel_tol * alib_max(abs(first), abs(second)), abs_tol);
+}
+// Check if the difference between [0] and [1] are within [amount]
+_ALIB_FQUAL bool alib_iswithin(float first, float second, float amount) {
+    float a = abs(first - second);
+    return (a < amount);
 }
 
 
@@ -622,6 +803,9 @@ _ALIB_FQUAL int alib_streq(std::string src, const char* match) {
     if (ml > sl) { return false; }
     return (src.compare(match) == 0);
 }
+_ALIB_FQUAL int alib_streqn(std::string src, const char* match, const size_t len) {
+    return strncmp(src.c_str(), match, len) == 0;
+}
 // Occurances of char `c` in `src`
 _ALIB_FQUAL size_t alib_chrocc(const char* src, char c, size_t len = 0) {
     alib_reqlen(&len, src);
@@ -632,7 +816,6 @@ _ALIB_FQUAL size_t alib_chrocc(const char* src, char c, size_t len = 0) {
     return occ;
 }
 #include <vector>
-#include <cstdarg>
 _ALIB_FQUAL const char* alib_rmocc(const char* src, char c, size_t len = 0) {
     alib_reqlen(&len, src);
     std::vector<char> src_copy;
@@ -775,7 +958,7 @@ _ALIB_FQUAL char* alib_strfmt(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     size_t bufsz = 0;
-    bufsz = snprintf(NULL, 0, fmt, args);
+    bufsz = vsnprintf(NULL, 0, fmt, args);
     char* _buf = (char*)malloc(bufsz);
     vsprintf(_buf, fmt, args);
     va_end(args);
@@ -783,16 +966,37 @@ _ALIB_FQUAL char* alib_strfmt(const char* fmt, ...) {
 }
 _ALIB_FQUAL std::string alib_strfmts(const char* fmt, ...) {
     va_list args;
-    std::string out;
     va_start(args, fmt);
     size_t bufsz = 0;
-    bufsz = snprintf(NULL, 0, fmt, args);
-    char* _buf = alib_malloca(char, bufsz);
+    bufsz = vsnprintf(NULL, 0, fmt, args);
+    char* _buf = (char*)malloc(bufsz);
+    vsprintf(_buf, fmt, args);
+    va_end(args);
+    return _buf;
+}
+
+_ALIB_FQUAL std::string alib_strfmtsv(const char* fmt, va_list args) {
+    std::string out;
+    size_t bufsz = 0;
+    bufsz = vsnprintf(NULL, 0, fmt, args);
+    char* _buf = new char[bufsz] {'\0'};
     vsprintf(_buf, fmt, args);
     out.append(_buf);
-    free(_buf);
-    va_end(args);
     return out;
+}
+_ALIB_FQUAL float alib_lerp_low(float a, float b, float f)
+{
+    return a + f * (b - a);
+}
+
+_ALIB_FQUAL float alib_lerp(float a, float b, float f) {
+    return (a * (1.0f - f)) + (b * f);
+}
+_ALIB_FQUAL float alib_clerp(float a, float b, float f) {
+    float o = (a * (1.0f - f)) + (b * f);
+    if (o < a) { return a; }
+    if (o > b) { return b; }
+    return o;
 }
 _ALIB_FQUAL const char* alib_chrrepl(const char* in, char match, char repl_value) {
     while (*(in++)) {
@@ -801,11 +1005,6 @@ _ALIB_FQUAL const char* alib_chrrepl(const char* in, char match, char repl_value
         }
     }
     return in;
-}
-// Unlike the character replacement version, this will be re-allocating on the stack if needed
-// Array will be trimmed after, make sure to free() it!
-_ALIB_FQUAL char* alib_strrepl(char* in, const char* match, const char* repl, size_t in_len = 0, size_t match_len = 0, size_t repl_len = 0) {
-    return (char*)"NTIMPL\0"; // NTIMPL
 }
 // Copies the sign-ed ness of A into B
 _ALIB_FQUAL void alib_copy_signed(signed int a, signed int* b) {
@@ -846,6 +1045,17 @@ _ALIB_FQUAL void alib_split(std::string arr, std::string del, std::vector<std::s
         out->push_back(arr.substr(start, end - start));
         start = end + del.size();
         end = arr.find(del, start);
+    }
+    out->push_back(arr.substr(start, end - start));
+}
+_ALIB_FQUAL void alib_split_quoted(std::string arr, std::vector<std::string>* out)
+{
+    size_t start = 0;
+    size_t end = arr.find("\"");
+    while (end != -1) {
+        out->push_back(arr.substr(start, end - start));
+        start = end + 1;
+        end = arr.find("\"", start);
     }
     out->push_back(arr.substr(start, end - start));
 }
@@ -900,11 +1110,22 @@ _ALIB_FQUAL std::string alib_lower(const char* s)
     std::transform(s2.begin(), s2.end(), s2.begin(), tolower);
     return s2;
 }
+_ALIB_FQUAL std::string alib_lowers(std::string s2)
+{
+    std::transform(s2.begin(), s2.end(), s2.begin(), tolower);
+    return s2;
+}
+
 
 // Uppercases string
 _ALIB_FQUAL std::string alib_upper(const char* s)
 {
     std::string s2 = s;
+    std::transform(s2.begin(), s2.end(), s2.begin(), toupper);
+    return s2;
+}
+_ALIB_FQUAL std::string alib_uppers(std::string s2)
+{
     std::transform(s2.begin(), s2.end(), s2.begin(), toupper);
     return s2;
 }
@@ -953,7 +1174,7 @@ _ALIB_FQUAL bool alib_contains_any_of(std::vector<T> _v, T vy) {
 
 #endif // ALIB_NO_BYTE_UTILS
 
-#if (defined(ALIB_FORCE_ASSERT) && __has_include(<conio.h>)) && (!defined(ALIB_NO_ASSERT))
+#if defined(ALIB_FORCE_ASSERT) || (!defined(ALIB_NO_ASSERT))
 #include <assert.h>
 #include <stdio.h>
 #include <conio.h>
@@ -1007,7 +1228,29 @@ _ALIB_FQUAL void alib_remove_if(std::vector<V_T> _vec, std::function<bool(V_T)> 
 #define alib_sleep_micros(micros) std::this_thread::sleep_for(std::chrono::microseconds(micros));
 #define alib_sleep_millis(millis) std::this_thread::sleep_for(std::chrono::milliseconds(millis));
 #define alib_sleep_second(second) std::this_thread::sleep_for(std::chrono::microseconds(second));
-
+// T should be a numeric or a numeric-like object.
+// Average of a numeric type. Defaults to the average of 2 objects.
+template <typename T, int max_elements = 2> struct alib_average {
+    int length = max_elements;
+    ALStack<T> m_stack;
+    void add(T element) {
+        if (m_stack.size() >= length) {
+            m_stack.pop_back();
+        }
+        m_stack.push_front(element);
+    }
+    T get() {
+        T sum = 0;
+        int amt = 0;
+        for (int i = 0; i < length && i < m_stack.size(); i++) {
+            sum += *(m_stack.Data + i);
+            amt++;
+        }
+        if (amt)
+            return sum / amt;
+        return 0;
+    }
+};
 
 #endif // __lib_aveth_utils_hpp
 
@@ -1142,7 +1385,6 @@ bool alib_j_cokeys(___alib__json j, std::string _s) {
 
 }
 #undef JSONREF
-#undef _CRT_SECURE_NO_WARNINGS
 
 #endif
 
