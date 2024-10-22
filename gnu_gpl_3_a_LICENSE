@@ -20,5 +20,5 @@ Copyright HOLDER YEAR - GNU-GPL3-a (https://github.com/avetharun/avetharun/blob/
         - Keep code closed source (*See exceptions)
     Exceptions
         - If code is closed source, it must be in a private setting. Examples are as follows:
-            EXA: A server used to host and/or distribute files
+            EXA: A server used to host and/or distribute files to an internal network
             EXB: Used as a base for porting and/or in microcontrollers
